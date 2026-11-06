@@ -150,6 +150,8 @@ function foldAct(g){const c=g.animations.find(a=>a.name==='Fold');if(!c)return;c
 function applyFold(){if(!mixer)return;foldA.time=Math.min(G.foldT*FOLD_S,FOLD_S-.001);mixer.update(0);}
 function loadCraft(){return new Promise((res,rej)=>{const bin=atob($('glb').textContent.trim()),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);
  new THREE.GLTFLoader().parse(u.buffer,'',g=>{inner.add(g.scene);g.scene.traverse(o=>{if(!o.isMesh)return;o.frustumCulled=false;
+   // the GLB has mirrored parts with inside-out faces (right pusher, tail skin): draw both sides so nothing goes see-through
+   if(o.material&&!o.material.transparent)o.material.side=THREE.DoubleSide;
    const m=/^Rotor_(FL|FR|RL|RR)_(Upper|Lower)/.exec(o.name);if(m)fans.push({o,y0:o.rotation.y+(/^R/.test(m[1])&&m[2]==='Lower'?2*D2R:0),i:['FL','FR','RL','RR'].indexOf(m[1])*2+(m[2]==='Lower'?1:0),axis:'y',sg:/FL_Upper|FR_Lower|RR_Upper|RL_Lower/.test(o.name)?1:-1});
    const t=/^Thruster_Fan_(L|R)/.exec(o.name);if(t)fans.push({o,y0:o.rotation.y,i:t[1]==='L'?8:9,axis:'y',sg:t[1]==='L'?1:-1});
    if(/^Canopy$/.test(o.name)){canopy=o;o.material=o.material.clone();o.material.opacity=.3;o.material.transparent=true;o.material.depthWrite=false;}
@@ -224,7 +226,7 @@ let sharePaused=false;
 function shareHref(){$('shareX').href='https://x.com/intent/post?text='+encodeURIComponent($('shareText').value);}
 function shareT(open){const el=$('share');if(open===!el.hidden)return;
   if(open){if(G.bestYou==null){banner('NO LAP TO POST','Finish a clean lap first',1600,'#ffc53d');return;}
-    sharePaused=G.paused;G.paused=true;$('shareTime').textContent=fmt(G.bestYou);$('shareText').value=`I ran a ${fmt(G.bestYou)} lap in the X1 Racing SkyRacer Flying Car Grand Prix. Can you beat it? @realx1racing x1racing.com`;shareHref();el.hidden=false;$('shareX').focus();}
+    sharePaused=G.paused;G.paused=true;$('shareTime').textContent=fmt(G.bestYou);$('shareText').value=`\u2708\uFE0F\u{1F3C1}\u{1F3C6} I ran a ${fmt(G.bestYou)} lap in the X1 Racing SkyRacer Flying Car Grand Prix. Can you beat it? @realx1racing x1racing.com/sim`;shareHref();el.hidden=false;$('shareX').focus();}
   else{G.paused=sharePaused;el.hidden=true;}}
 function setView(v){G.view=v;cam.near=v===1?.12:.7;G.cockpitParts.forEach(o=>{o.visible=v!==1;});[0,1,2].forEach(i=>$('v'+i).classList.toggle('on',i===v));camInit=false;if(canopy)canopy.material.opacity=v===1?.1:.3;}
 $('bFans').onclick=e=>{toggleFans();e.target.blur();};$('shareText').oninput=shareHref;$('bShareX').onclick=()=>shareT(false);$('bShareCopy').onclick=e=>{const t=$('shareText'),b=e.target,ok=()=>{b.textContent='Copied';setTimeout(()=>{b.textContent='Copy text';},1200);},fb=()=>{t.select();b.textContent='Press Cmd+C';};try{navigator.clipboard.writeText(t.value).then(ok,fb);}catch(_){fb();}};
