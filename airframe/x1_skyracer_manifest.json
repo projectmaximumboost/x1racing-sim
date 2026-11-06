@@ -1,0 +1,1237 @@
+{
+  "aircraft": "X1 SkyRacer",
+  "generated_by": "x1_pterosim_kit.py",
+  "frames": {
+    "model": "metres; +X craft left, +Y aft (nose at -Y), +Z up; origin on ground under centre",
+    "jsbsim_structural": "inches; +X aft, +Y right, +Z up",
+    "frd": "metres from the race-weight CG (full propane + 500 lb ballast); +X forward, +Y right, +Z down"
+  },
+  "mass": {
+    "dry_lb": 2800.0,
+    "dry_before_reduction_lb": 3106.0,
+    "mass_reduction_pct": 9.852,
+    "lift_unit_lb_before_reduction": 190.0,
+    "pusher_unit_lb_before_reduction": 100.0,
+    "fuel_lb": 200.0,
+    "ballast_lb": 500.0,
+    "race_lb": 3500.0,
+    "mtow_recommended_lb": 3500.0,
+    "note": "Rule 3.3: race weight = ready to race, no pilot, full 200 lb propane and full 500 lb ballast",
+    "ballast": {
+      "required_lb": 500.0,
+      "loaded_by_default_lb": 500.0,
+      "where": "front seats, split evenly",
+      "tradeable_for": "instrumentation",
+      "jsbsim_properties": [
+        "inertia/pointmass-weight-lbs[0]",
+        "inertia/pointmass-weight-lbs[1]"
+      ],
+      "seats_model_m": [
+        {
+          "name": "Ballast, left front seat",
+          "loc": [
+            0.32,
+            -0.85,
+            0.66
+          ]
+        },
+        {
+          "name": "Ballast, right front seat",
+          "loc": [
+            -0.32,
+            -0.85,
+            0.66
+          ]
+        }
+      ]
+    },
+    "cg_dry_model_m": [
+      0.0,
+      0.374,
+      0.76
+    ],
+    "cg_race_model_m": [
+      0.0,
+      0.17,
+      0.728
+    ],
+    "inertia_slug_ft2": {
+      "ixx": 826.0,
+      "iyy": 1443.9,
+      "izz": 2166.3,
+      "ixz": 141.6,
+      "about": "dry CG"
+    },
+    "inertia_race_slug_ft2": {
+      "ixx": 880.1,
+      "iyy": 1669.9,
+      "izz": 2432.7,
+      "ixz": 164.8,
+      "about": "race-weight CG: full propane in the tanks + 500 lb ballast as point masses"
+    },
+    "inertia_race_kg_m2": {
+      "ixx": 1193.3,
+      "iyy": 2264.0,
+      "izz": 3298.3,
+      "ixz": 223.4
+    },
+    "items": [
+      {
+        "name": "generator (OPFPLG)",
+        "lb": 1059.2,
+        "centre_model_m": [
+          0.0,
+          0.8,
+          0.8
+        ]
+      },
+      {
+        "name": "accumulator, LTO 7.5 kWh",
+        "lb": 194.7,
+        "centre_model_m": [
+          0.0,
+          0.454,
+          0.563
+        ]
+      },
+      {
+        "name": "lift unit FL",
+        "lb": 171.3,
+        "centre_model_m": [
+          1.722,
+          -1.5,
+          0.48
+        ]
+      },
+      {
+        "name": "lift unit FR",
+        "lb": 171.3,
+        "centre_model_m": [
+          -1.722,
+          -1.5,
+          0.48
+        ]
+      },
+      {
+        "name": "lift unit RL",
+        "lb": 171.3,
+        "centre_model_m": [
+          1.722,
+          1.2,
+          1.12
+        ]
+      },
+      {
+        "name": "lift unit RR",
+        "lb": 171.3,
+        "centre_model_m": [
+          -1.722,
+          1.2,
+          1.12
+        ]
+      },
+      {
+        "name": "pusher L",
+        "lb": 90.1,
+        "centre_model_m": [
+          0.45,
+          2.25,
+          0.9
+        ]
+      },
+      {
+        "name": "pusher R",
+        "lb": 90.1,
+        "centre_model_m": [
+          -0.45,
+          2.25,
+          0.9
+        ]
+      },
+      {
+        "name": "front wings",
+        "lb": 45.1,
+        "centre_model_m": [
+          0.0,
+          -1.5,
+          0.5
+        ]
+      },
+      {
+        "name": "rear wings",
+        "lb": 54.1,
+        "centre_model_m": [
+          0.0,
+          1.2,
+          1.12
+        ]
+      },
+      {
+        "name": "sponsons + wheels",
+        "lb": 72.1,
+        "centre_model_m": [
+          0.0,
+          -0.15,
+          0.35
+        ]
+      },
+      {
+        "name": "fuselage, seats, canopy",
+        "lb": 509.3,
+        "centre_model_m": [
+          0.0,
+          -0.35,
+          0.69
+        ]
+      }
+    ]
+  },
+  "rotors": [
+    {
+      "index": 0,
+      "blender_object": "Rotor_FL_Upper",
+      "kind": "lift",
+      "spin_from_above_or_behind": "CCW",
+      "max_thrust_lbf": 1000.0,
+      "axis_frd": [
+        0,
+        0,
+        -1
+      ],
+      "model_m": [
+        1.7219,
+        -1.5,
+        0.515
+      ],
+      "jsbsim_in": [
+        -59.06,
+        -67.79,
+        20.28
+      ],
+      "frd_from_cg_m": [
+        1.67,
+        -1.7219,
+        0.213
+      ],
+      "frd_from_dry_cg_m": [
+        1.8739,
+        -1.7219,
+        0.2447
+      ],
+      "jsbsim_cmd_property": "fcs/rotor0-cmd-norm",
+      "glb": "glb/X1_SkyRacer_Rotor0_FL_Upper.glb",
+      "glb_mount_gltf_m": [
+        1.7219,
+        0.515,
+        1.5
+      ],
+      "glb_spin_axis_gltf": [
+        0.0,
+        1.0,
+        0.0
+      ]
+    },
+    {
+      "index": 1,
+      "blender_object": "Rotor_FL_Lower",
+      "kind": "lift",
+      "spin_from_above_or_behind": "CW",
+      "max_thrust_lbf": 1000.0,
+      "axis_frd": [
+        0,
+        0,
+        -1
+      ],
+      "model_m": [
+        1.7219,
+        -1.5,
+        0.445
+      ],
+      "jsbsim_in": [
+        -59.06,
+        -67.79,
+        17.52
+      ],
+      "frd_from_cg_m": [
+        1.67,
+        -1.7219,
+        0.283
+      ],
+      "frd_from_dry_cg_m": [
+        1.8739,
+        -1.7219,
+        0.3147
+      ],
+      "jsbsim_cmd_property": "fcs/rotor1-cmd-norm",
+      "glb": "glb/X1_SkyRacer_Rotor1_FL_Lower.glb",
+      "glb_mount_gltf_m": [
+        1.7219,
+        0.445,
+        1.5
+      ],
+      "glb_spin_axis_gltf": [
+        0.0,
+        1.0,
+        0.0
+      ]
+    },
+    {
+      "index": 2,
+      "blender_object": "Rotor_FR_Upper",
+      "kind": "lift",
+      "spin_from_above_or_behind": "CW",
+      "max_thrust_lbf": 1000.0,
+      "axis_frd": [
+        0,
+        0,
+        -1
+      ],
+      "model_m": [
+        -1.7219,
+        -1.5,
+        0.515
+      ],
+      "jsbsim_in": [
+        -59.06,
+        67.79,
+        20.28
+      ],
+      "frd_from_cg_m": [
+        1.67,
+        1.7219,
+        0.213
+      ],
+      "frd_from_dry_cg_m": [
+        1.8739,
+        1.7219,
+        0.2447
+      ],
+      "jsbsim_cmd_property": "fcs/rotor2-cmd-norm",
+      "glb": "glb/X1_SkyRacer_Rotor2_FR_Upper.glb",
+      "glb_mount_gltf_m": [
+        -1.7219,
+        0.515,
+        1.5
+      ],
+      "glb_spin_axis_gltf": [
+        0.0,
+        1.0,
+        0.0
+      ]
+    },
+    {
+      "index": 3,
+      "blender_object": "Rotor_FR_Lower",
+      "kind": "lift",
+      "spin_from_above_or_behind": "CCW",
+      "max_thrust_lbf": 1000.0,
+      "axis_frd": [
+        0,
+        0,
+        -1
+      ],
+      "model_m": [
+        -1.7219,
+        -1.5,
+        0.445
+      ],
+      "jsbsim_in": [
+        -59.06,
+        67.79,
+        17.52
+      ],
+      "frd_from_cg_m": [
+        1.67,
+        1.7219,
+        0.283
+      ],
+      "frd_from_dry_cg_m": [
+        1.8739,
+        1.7219,
+        0.3147
+      ],
+      "jsbsim_cmd_property": "fcs/rotor3-cmd-norm",
+      "glb": "glb/X1_SkyRacer_Rotor3_FR_Lower.glb",
+      "glb_mount_gltf_m": [
+        -1.7219,
+        0.445,
+        1.5
+      ],
+      "glb_spin_axis_gltf": [
+        0.0,
+        1.0,
+        0.0
+      ]
+    },
+    {
+      "index": 4,
+      "blender_object": "Rotor_RL_Upper",
+      "kind": "lift",
+      "spin_from_above_or_behind": "CW",
+      "max_thrust_lbf": 1000.0,
+      "axis_frd": [
+        0,
+        0,
+        -1
+      ],
+      "model_m": [
+        1.7219,
+        1.2,
+        1.155
+      ],
+      "jsbsim_in": [
+        47.24,
+        -67.79,
+        45.47
+      ],
+      "frd_from_cg_m": [
+        -1.03,
+        -1.7219,
+        -0.427
+      ],
+      "frd_from_dry_cg_m": [
+        -0.8261,
+        -1.7219,
+        -0.3953
+      ],
+      "jsbsim_cmd_property": "fcs/rotor4-cmd-norm",
+      "glb": "glb/X1_SkyRacer_Rotor4_RL_Upper.glb",
+      "glb_mount_gltf_m": [
+        1.7219,
+        1.155,
+        -1.2
+      ],
+      "glb_spin_axis_gltf": [
+        0.0,
+        1.0,
+        0.0
+      ]
+    },
+    {
+      "index": 5,
+      "blender_object": "Rotor_RL_Lower",
+      "kind": "lift",
+      "spin_from_above_or_behind": "CCW",
+      "max_thrust_lbf": 1000.0,
+      "axis_frd": [
+        0,
+        0,
+        -1
+      ],
+      "model_m": [
+        1.7219,
+        1.2,
+        1.085
+      ],
+      "jsbsim_in": [
+        47.24,
+        -67.79,
+        42.72
+      ],
+      "frd_from_cg_m": [
+        -1.03,
+        -1.7219,
+        -0.357
+      ],
+      "frd_from_dry_cg_m": [
+        -0.8261,
+        -1.7219,
+        -0.3253
+      ],
+      "jsbsim_cmd_property": "fcs/rotor5-cmd-norm",
+      "glb": "glb/X1_SkyRacer_Rotor5_RL_Lower.glb",
+      "glb_mount_gltf_m": [
+        1.7219,
+        1.085,
+        -1.2
+      ],
+      "glb_spin_axis_gltf": [
+        0.0,
+        1.0,
+        0.0
+      ]
+    },
+    {
+      "index": 6,
+      "blender_object": "Rotor_RR_Upper",
+      "kind": "lift",
+      "spin_from_above_or_behind": "CCW",
+      "max_thrust_lbf": 1000.0,
+      "axis_frd": [
+        0,
+        0,
+        -1
+      ],
+      "model_m": [
+        -1.7219,
+        1.2,
+        1.155
+      ],
+      "jsbsim_in": [
+        47.24,
+        67.79,
+        45.47
+      ],
+      "frd_from_cg_m": [
+        -1.03,
+        1.7219,
+        -0.427
+      ],
+      "frd_from_dry_cg_m": [
+        -0.8261,
+        1.7219,
+        -0.3953
+      ],
+      "jsbsim_cmd_property": "fcs/rotor6-cmd-norm",
+      "glb": "glb/X1_SkyRacer_Rotor6_RR_Upper.glb",
+      "glb_mount_gltf_m": [
+        -1.7219,
+        1.155,
+        -1.2
+      ],
+      "glb_spin_axis_gltf": [
+        0.0,
+        1.0,
+        0.0
+      ]
+    },
+    {
+      "index": 7,
+      "blender_object": "Rotor_RR_Lower",
+      "kind": "lift",
+      "spin_from_above_or_behind": "CW",
+      "max_thrust_lbf": 1000.0,
+      "axis_frd": [
+        0,
+        0,
+        -1
+      ],
+      "model_m": [
+        -1.7219,
+        1.2,
+        1.085
+      ],
+      "jsbsim_in": [
+        47.24,
+        67.79,
+        42.72
+      ],
+      "frd_from_cg_m": [
+        -1.03,
+        1.7219,
+        -0.357
+      ],
+      "frd_from_dry_cg_m": [
+        -0.8261,
+        1.7219,
+        -0.3253
+      ],
+      "jsbsim_cmd_property": "fcs/rotor7-cmd-norm",
+      "glb": "glb/X1_SkyRacer_Rotor7_RR_Lower.glb",
+      "glb_mount_gltf_m": [
+        -1.7219,
+        1.085,
+        -1.2
+      ],
+      "glb_spin_axis_gltf": [
+        0.0,
+        1.0,
+        0.0
+      ]
+    },
+    {
+      "index": 8,
+      "blender_object": "Thruster_Fan_L",
+      "kind": "pusher",
+      "spin_from_above_or_behind": "CCW",
+      "max_thrust_lbf": 600.0,
+      "axis_frd": [
+        1,
+        0,
+        0
+      ],
+      "model_m": [
+        0.45,
+        2.2712,
+        0.9
+      ],
+      "jsbsim_in": [
+        89.42,
+        -17.72,
+        35.43
+      ],
+      "frd_from_cg_m": [
+        -2.1012,
+        -0.45,
+        -0.172
+      ],
+      "frd_from_dry_cg_m": [
+        -1.8973,
+        -0.45,
+        -0.1403
+      ],
+      "jsbsim_cmd_property": "fcs/rotor8-cmd-norm",
+      "glb": "glb/X1_SkyRacer_Rotor8_Pusher_L.glb",
+      "glb_mount_gltf_m": [
+        0.45,
+        0.9,
+        -2.1857
+      ],
+      "glb_spin_axis_gltf": [
+        0.0,
+        0.0,
+        -1.0
+      ]
+    },
+    {
+      "index": 9,
+      "blender_object": "Thruster_Fan_R",
+      "kind": "pusher",
+      "spin_from_above_or_behind": "CW",
+      "max_thrust_lbf": 600.0,
+      "axis_frd": [
+        1,
+        0,
+        0
+      ],
+      "model_m": [
+        -0.45,
+        2.2712,
+        0.9
+      ],
+      "jsbsim_in": [
+        89.42,
+        17.72,
+        35.43
+      ],
+      "frd_from_cg_m": [
+        -2.1012,
+        0.45,
+        -0.172
+      ],
+      "frd_from_dry_cg_m": [
+        -1.8973,
+        0.45,
+        -0.1403
+      ],
+      "jsbsim_cmd_property": "fcs/rotor9-cmd-norm",
+      "glb": "glb/X1_SkyRacer_Rotor9_Pusher_R.glb",
+      "glb_mount_gltf_m": [
+        -0.45,
+        0.9,
+        -2.1857
+      ],
+      "glb_spin_axis_gltf": [
+        0.0,
+        0.0,
+        -1.0
+      ]
+    }
+  ],
+  "tanks": [
+    {
+      "name": "Tank_Sponson_L",
+      "loc": [
+        0.86,
+        -0.14999999999999997,
+        0.4
+      ],
+      "litres": 72.4,
+      "contents_lb": 60.9,
+      "capacity_lb": 76.2
+    },
+    {
+      "name": "Tank_Sponson_R",
+      "loc": [
+        -0.86,
+        -0.14999999999999997,
+        0.4
+      ],
+      "litres": 72.4,
+      "contents_lb": 60.9,
+      "capacity_lb": 76.2
+    },
+    {
+      "name": "Tank_Transverse",
+      "loc": [
+        0.0,
+        -0.10499999999999994,
+        0.56
+      ],
+      "litres": 92.9,
+      "contents_lb": 78.1,
+      "capacity_lb": 97.7
+    }
+  ],
+  "wheels": [
+    {
+      "name": "Wheel_FL",
+      "loc": [
+        0.86,
+        -0.6799999999999999,
+        0.0
+      ]
+    },
+    {
+      "name": "Wheel_FR",
+      "loc": [
+        -0.86,
+        -0.6799999999999999,
+        0.0
+      ]
+    },
+    {
+      "name": "Wheel_RL",
+      "loc": [
+        0.86,
+        0.38,
+        0.0
+      ]
+    },
+    {
+      "name": "Wheel_RR",
+      "loc": [
+        -0.86,
+        0.38,
+        0.0
+      ]
+    }
+  ],
+  "sensors": {
+    "imu": {
+      "model_m": [
+        0.0,
+        0.17,
+        0.728
+      ],
+      "note": "at the race-weight CG"
+    },
+    "gps": {
+      "model_m": [
+        0.0,
+        0.4,
+        1.15
+      ],
+      "note": "engine-cover crown behind the canopy"
+    },
+    "baro": {
+      "model_m": [
+        0.0,
+        -0.3,
+        0.7
+      ],
+      "note": "inside the cabin, static-vented"
+    },
+    "airspeed": {
+      "model_m": [
+        0.0,
+        -2.74,
+        0.6
+      ],
+      "note": "pitot at the nose tip"
+    },
+    "camera": {
+      "model_m": [
+        0.32,
+        -0.8999999999999999,
+        1.08
+      ],
+      "note": "driver eye, left seat"
+    }
+  },
+  "aero": {
+    "wing_area_ft2": 39.0,
+    "ref_span_ft": 7.11,
+    "ref_chord_ft": 5.48,
+    "cd0_on_wing_area": 0.497,
+    "cda_m2": 1.8
+  },
+  "power": {
+    "continuous_hp": 1500.0,
+    "burst_hp": 1913,
+    "output_ceiling_hp": 2000.0,
+    "accumulator": "LTO, 162 x Toshiba SCiB 20Ah-HP, 162S, 373 V (from x1_opfplg_blender.py)",
+    "accumulator_peak_kw": 308.0,
+    "accumulator_reserve_kwh": 0.0,
+    "emergency_landing": "2 of 3 OPFPLG cylinders plus a parachute; the pack is not sized for an engine-out landing",
+    "accumulator_usable_kwh": 7.5,
+    "figure_of_merit": 0.75,
+    "duct_gain": 1.13,
+    "coax_loss": 1.12,
+    "coax_upper_share": 0.55,
+    "max_lift_continuous_lbf": 4455,
+    "max_lift_burst_lbf": 5239,
+    "generator": "OPFPLG on propane",
+    "thermal_efficiency": 0.6,
+    "propane_lhv_mj_kg": 46.35,
+    "fuel_flow_at_continuous_pph": 319,
+    "endurance_at_continuous_min": 37.6,
+    "avg_hp_for_44min_race_plus_lap": 1253,
+    "note": "Each 44 in duct is one coaxial unit (one disk); lift has priority over the pushers when power runs short"
+  },
+  "hover": {
+    "race_full_ballast": {
+      "weight_lb": 3500.0,
+      "cg_model_m": [
+        0.0,
+        0.17,
+        0.728
+      ],
+      "front_share": 0.381,
+      "thrust_per_front_duct_lbf": 668,
+      "thrust_per_rear_duct_lbf": 1082,
+      "front_upper_lower_lbf": [
+        367,
+        300
+      ],
+      "rear_upper_lower_lbf": [
+        595,
+        487
+      ],
+      "hover_hp": 1067,
+      "hover_fuel_pph": 227,
+      "hover_endurance_min": 52.9,
+      "thrust_to_weight_continuous": 1.27,
+      "thrust_to_weight_burst": 1.5,
+      "margin_to_mtow_lb": 0.0
+    },
+    "ballast_removed": {
+      "weight_lb": 3000.0,
+      "cg_model_m": [
+        0.0,
+        0.34,
+        0.74
+      ],
+      "front_share": 0.318,
+      "thrust_per_front_duct_lbf": 478,
+      "thrust_per_rear_duct_lbf": 1022,
+      "front_upper_lower_lbf": [
+        263,
+        215
+      ],
+      "rear_upper_lower_lbf": [
+        562,
+        460
+      ],
+      "hover_hp": 870,
+      "hover_fuel_pph": 185,
+      "hover_endurance_min": 64.8,
+      "thrust_to_weight_continuous": 1.49,
+      "thrust_to_weight_burst": 1.75,
+      "margin_to_mtow_lb": 500.0
+    }
+  },
+  "glb": {
+    "frame": "glTF: metres, +Y up, +Z nose (forward), +X craft left. (x, y, z)_glTF = (x, z, -y)_model",
+    "body": {
+      "file": "glb/X1_SkyRacer_Body.glb",
+      "origin": "model origin: ground level under the craft centre",
+      "pose": "flight (wings and ducts unfolded)",
+      "parts": [
+        "Body",
+        "Canopy",
+        "Canopy_Frame",
+        "Engine_Louvres",
+        "Front_Wing_Root_L",
+        "Front_Wing_Root_R",
+        "Front_Wing_L",
+        "Front_Wing_R",
+        "Front_Wing_Fillet_L",
+        "Front_Wing_Fillet_R",
+        "Rear_Wing_Stub_L",
+        "Rear_Wing_Stub_R",
+        "Rear_Wing_L",
+        "Rear_Wing_R",
+        "Rear_Wing_Fillet_L",
+        "Rear_Wing_Fillet_R",
+        "Flank_Swoosh_L",
+        "Flank_Swoosh_R",
+        "Duct_FL",
+        "Duct_FR",
+        "Duct_RL",
+        "Duct_RR",
+        "Thruster_L",
+        "Thruster_R",
+        "Sponson_L",
+        "Sponson_R",
+        "Fuel_Filler_L",
+        "Fuel_Filler_R",
+        "Wheel_Fork_FL",
+        "Wheel_Fork_FR",
+        "Wheel_Fork_RL",
+        "Wheel_Fork_RR",
+        "OPF_Ext_Vapour_Line_L",
+        "OPF_Ext_Vapour_Line_R",
+        "OPF_Ext_Liquid_Return_L",
+        "OPF_Ext_Liquid_Return_R",
+        "OPF_Ext_Exhaust_Downpipe",
+        "OPF_Fan_HX_L",
+        "OPF_Fan_HX_R",
+        "Nav_FL",
+        "Nav_FR",
+        "Nav_RL",
+        "Nav_RR",
+        "Nav_Tail"
+      ],
+      "not_modelled": [
+        "Engine_Placeholder",
+        "Firewall",
+        "Seat_L",
+        "Seat_R",
+        "Tank_Sponson_L",
+        "Tank_Sponson_R",
+        "Tank_Transverse"
+      ],
+      "cg_race_gltf_m": [
+        0.0,
+        0.728,
+        -0.17
+      ]
+    },
+    "moving_parts": [
+      {
+        "name": "Rotor_FL_Upper",
+        "kind": "lift fan",
+        "file": "glb/X1_SkyRacer_Rotor0_FL_Upper.glb",
+        "mount_model_m": [
+          1.7219,
+          -1.5,
+          0.515
+        ],
+        "mount_gltf_m": [
+          1.7219,
+          0.515,
+          1.5
+        ],
+        "spin_axis_gltf": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "rotor_index": 0,
+        "spin": "CCW seen from above",
+        "positive_rotation_sign": 1,
+        "blades_pitch_checked_against_spin": true,
+        "blades_mirrored_from_source_model": false
+      },
+      {
+        "name": "Rotor_FL_Lower",
+        "kind": "lift fan",
+        "file": "glb/X1_SkyRacer_Rotor1_FL_Lower.glb",
+        "mount_model_m": [
+          1.7219,
+          -1.5,
+          0.445
+        ],
+        "mount_gltf_m": [
+          1.7219,
+          0.445,
+          1.5
+        ],
+        "spin_axis_gltf": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "rotor_index": 1,
+        "spin": "CW seen from above",
+        "positive_rotation_sign": -1,
+        "blades_pitch_checked_against_spin": true,
+        "blades_mirrored_from_source_model": false
+      },
+      {
+        "name": "Rotor_FR_Upper",
+        "kind": "lift fan",
+        "file": "glb/X1_SkyRacer_Rotor2_FR_Upper.glb",
+        "mount_model_m": [
+          -1.7219,
+          -1.5,
+          0.515
+        ],
+        "mount_gltf_m": [
+          -1.7219,
+          0.515,
+          1.5
+        ],
+        "spin_axis_gltf": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "rotor_index": 2,
+        "spin": "CW seen from above",
+        "positive_rotation_sign": -1,
+        "blades_pitch_checked_against_spin": true,
+        "blades_mirrored_from_source_model": false
+      },
+      {
+        "name": "Rotor_FR_Lower",
+        "kind": "lift fan",
+        "file": "glb/X1_SkyRacer_Rotor3_FR_Lower.glb",
+        "mount_model_m": [
+          -1.7219,
+          -1.5,
+          0.445
+        ],
+        "mount_gltf_m": [
+          -1.7219,
+          0.445,
+          1.5
+        ],
+        "spin_axis_gltf": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "rotor_index": 3,
+        "spin": "CCW seen from above",
+        "positive_rotation_sign": 1,
+        "blades_pitch_checked_against_spin": true,
+        "blades_mirrored_from_source_model": false
+      },
+      {
+        "name": "Rotor_RL_Upper",
+        "kind": "lift fan",
+        "file": "glb/X1_SkyRacer_Rotor4_RL_Upper.glb",
+        "mount_model_m": [
+          1.7219,
+          1.2,
+          1.155
+        ],
+        "mount_gltf_m": [
+          1.7219,
+          1.155,
+          -1.2
+        ],
+        "spin_axis_gltf": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "rotor_index": 4,
+        "spin": "CW seen from above",
+        "positive_rotation_sign": -1,
+        "blades_pitch_checked_against_spin": true,
+        "blades_mirrored_from_source_model": false
+      },
+      {
+        "name": "Rotor_RL_Lower",
+        "kind": "lift fan",
+        "file": "glb/X1_SkyRacer_Rotor5_RL_Lower.glb",
+        "mount_model_m": [
+          1.7219,
+          1.2,
+          1.085
+        ],
+        "mount_gltf_m": [
+          1.7219,
+          1.085,
+          -1.2
+        ],
+        "spin_axis_gltf": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "rotor_index": 5,
+        "spin": "CCW seen from above",
+        "positive_rotation_sign": 1,
+        "blades_pitch_checked_against_spin": true,
+        "blades_mirrored_from_source_model": false
+      },
+      {
+        "name": "Rotor_RR_Upper",
+        "kind": "lift fan",
+        "file": "glb/X1_SkyRacer_Rotor6_RR_Upper.glb",
+        "mount_model_m": [
+          -1.7219,
+          1.2,
+          1.155
+        ],
+        "mount_gltf_m": [
+          -1.7219,
+          1.155,
+          -1.2
+        ],
+        "spin_axis_gltf": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "rotor_index": 6,
+        "spin": "CCW seen from above",
+        "positive_rotation_sign": 1,
+        "blades_pitch_checked_against_spin": true,
+        "blades_mirrored_from_source_model": false
+      },
+      {
+        "name": "Rotor_RR_Lower",
+        "kind": "lift fan",
+        "file": "glb/X1_SkyRacer_Rotor7_RR_Lower.glb",
+        "mount_model_m": [
+          -1.7219,
+          1.2,
+          1.085
+        ],
+        "mount_gltf_m": [
+          -1.7219,
+          1.085,
+          -1.2
+        ],
+        "spin_axis_gltf": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "rotor_index": 7,
+        "spin": "CW seen from above",
+        "positive_rotation_sign": -1,
+        "blades_pitch_checked_against_spin": true,
+        "blades_mirrored_from_source_model": false
+      },
+      {
+        "name": "Thruster_Fan_L",
+        "kind": "pusher fan",
+        "file": "glb/X1_SkyRacer_Rotor8_Pusher_L.glb",
+        "mount_model_m": [
+          0.45,
+          2.1857,
+          0.9
+        ],
+        "mount_gltf_m": [
+          0.45,
+          0.9,
+          -2.1857
+        ],
+        "spin_axis_gltf": [
+          0.0,
+          0.0,
+          -1.0
+        ],
+        "rotor_index": 8,
+        "spin": "CCW seen from behind",
+        "positive_rotation_sign": 1,
+        "blades_pitch_checked_against_spin": true,
+        "blades_mirrored_from_source_model": false
+      },
+      {
+        "name": "Thruster_Fan_R",
+        "kind": "pusher fan",
+        "file": "glb/X1_SkyRacer_Rotor9_Pusher_R.glb",
+        "mount_model_m": [
+          -0.45,
+          2.1857,
+          0.9
+        ],
+        "mount_gltf_m": [
+          -0.45,
+          0.9,
+          -2.1857
+        ],
+        "spin_axis_gltf": [
+          0.0,
+          0.0,
+          -1.0
+        ],
+        "rotor_index": 9,
+        "spin": "CW seen from behind",
+        "positive_rotation_sign": -1,
+        "blades_pitch_checked_against_spin": true,
+        "blades_mirrored_from_source_model": false
+      },
+      {
+        "name": "Wheel_FL",
+        "kind": "wheel",
+        "file": "glb/X1_SkyRacer_Wheel_FL.glb",
+        "mount_model_m": [
+          0.86,
+          -0.68,
+          0.1016
+        ],
+        "mount_gltf_m": [
+          0.86,
+          0.1016,
+          0.68
+        ],
+        "spin_axis_gltf": [
+          1.0,
+          0.0,
+          0.0
+        ],
+        "radius_m": 0.1016,
+        "positive_rotation_sign": 1,
+        "spin": "forward roll = positive rotation about spin_axis_gltf"
+      },
+      {
+        "name": "Wheel_FR",
+        "kind": "wheel",
+        "file": "glb/X1_SkyRacer_Wheel_FR.glb",
+        "mount_model_m": [
+          -0.86,
+          -0.68,
+          0.1016
+        ],
+        "mount_gltf_m": [
+          -0.86,
+          0.1016,
+          0.68
+        ],
+        "spin_axis_gltf": [
+          1.0,
+          0.0,
+          0.0
+        ],
+        "radius_m": 0.1016,
+        "positive_rotation_sign": 1,
+        "spin": "forward roll = positive rotation about spin_axis_gltf"
+      },
+      {
+        "name": "Wheel_RL",
+        "kind": "wheel",
+        "file": "glb/X1_SkyRacer_Wheel_RL.glb",
+        "mount_model_m": [
+          0.86,
+          0.38,
+          0.1016
+        ],
+        "mount_gltf_m": [
+          0.86,
+          0.1016,
+          -0.38
+        ],
+        "spin_axis_gltf": [
+          1.0,
+          0.0,
+          0.0
+        ],
+        "radius_m": 0.1016,
+        "positive_rotation_sign": 1,
+        "spin": "forward roll = positive rotation about spin_axis_gltf"
+      },
+      {
+        "name": "Wheel_RR",
+        "kind": "wheel",
+        "file": "glb/X1_SkyRacer_Wheel_RR.glb",
+        "mount_model_m": [
+          -0.86,
+          0.38,
+          0.1016
+        ],
+        "mount_gltf_m": [
+          -0.86,
+          0.1016,
+          -0.38
+        ],
+        "spin_axis_gltf": [
+          1.0,
+          0.0,
+          0.0
+        ],
+        "radius_m": 0.1016,
+        "positive_rotation_sign": 1,
+        "spin": "forward roll = positive rotation about spin_axis_gltf"
+      }
+    ],
+    "how_to_assemble": "Place each moving-part GLB at mount_gltf_m in the body frame with no rotation, then rotate it about spin_axis_gltf. Positive = right-hand rule about the axis."
+  }
+}
