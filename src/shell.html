@@ -1,138 +1,10 @@
-<title>X1 Racing SkyRacer Flying Car Grand Prix</title>
+<title>@@TITLE@@</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,500;0,600;0,700;1,700&family=IBM+Plex+Mono:wght@500;600&display=swap">
 <style>
-/* Layout: the flight view owns the centre. Graphics sit on dark edge scrims: timing top left, next turn top centre,
-   map and lap list down the right rail, speed bottom left, altitude bottom right, command bar bottom centre. */
-:root{ color-scheme:dark;
-  --ink:#f6f3ee; --dim:#c3c6cc; --scrim:rgba(6,10,15,.74); --chip:rgba(8,12,18,.72); --line:rgba(255,255,255,.2);
-  --x1:#e8690f; --port:#ff3b3b; --stbd:#21d97e; --warn:#ffc53d; --cyan:#58d7ff;
-  --disp:"Barlow Condensed","Arial Narrow",sans-serif; --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
-  --gl:max(16px,env(safe-area-inset-left,0px)); --gr:max(16px,env(safe-area-inset-right,0px)); --gt:calc(12px + env(safe-area-inset-top,0px)); --gb:calc(12px + env(safe-area-inset-bottom,0px)); }
-[hidden]{display:none!important}
-html,body{height:100%;margin:0;background:#0b1118;color:var(--ink);overflow:hidden;font-family:var(--disp);-webkit-font-smoothing:antialiased}
-#gl,#o2d{position:fixed;inset:0;width:100%;height:100%;display:block}
-#o2d{pointer-events:none}
-.hud{position:fixed;pointer-events:none;font-variant-numeric:tabular-nums;text-shadow:0 1px 3px rgba(0,0,0,.65)}
-.lab{font:600 12px/1 var(--disp);letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
-#scrimT,#scrimB{position:fixed;left:0;right:0;pointer-events:none}
-#scrimT{top:0;height:128px;background:linear-gradient(180deg,var(--scrim),rgba(6,10,15,0))}
-#scrimB{bottom:0;height:212px;background:linear-gradient(0deg,var(--scrim),rgba(6,10,15,0))}
-/* timing */
-#logo{position:absolute;left:0;top:0;width:66px;height:66px;filter:drop-shadow(0 2px 5px rgba(0,0,0,.5))}
-#loading img{width:150px;height:150px;display:block;margin:0 auto 12px}
-#tower{top:var(--gt);left:var(--gl);padding-left:76px;display:grid;grid-template-columns:auto auto;column-gap:18px;align-items:start}
-#lapTop{grid-column:1;display:flex;gap:8px;align-items:center}
-#lapNo{font:700 18px/1 var(--disp);letter-spacing:.06em}
-#pilotChip{font:700 12px/1 var(--disp);letter-spacing:.1em;padding:3px 6px;background:var(--x1);color:#14100a;text-shadow:none}
-#pilotChip.you{background:var(--cyan)}
-#clock{grid-column:1;font:600 40px/1.08 var(--mono);letter-spacing:-.03em;margin-top:3px}
-#delta{grid-column:1;font:600 15px/1 var(--mono);min-height:16px}
-#splits{grid-column:2;grid-row:1/4;display:grid;gap:5px;padding-top:2px}
-.tr{display:grid;grid-template-columns:64px 68px;align-items:baseline}
-.tr b{font:600 15px/1 var(--mono);text-align:right}
-/* next turn */
-#next{top:var(--gt);left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:10px;background:var(--chip);padding-right:10px}
-#nextArrow{width:52px;height:52px;display:grid;place-items:center;background:var(--port);color:#0b0e12}
-#nextArrow svg{width:34px;height:34px}
-#nextTitle{font:700 28px/1 var(--disp);letter-spacing:.02em;white-space:nowrap}
-#nextSub{font:600 14px/1.1 var(--disp);letter-spacing:.05em;color:var(--dim);margin-top:2px;white-space:nowrap}
-#seq{display:flex;gap:3px;align-items:center;padding-left:10px;border-left:1px solid var(--line);align-self:stretch}
-#seq span{width:23px;height:23px;display:grid;place-items:center;font:700 14px/1 var(--disp);color:#0b0e12;text-shadow:none}
-/* right rail */
-#rail{top:var(--gt);right:var(--gr);width:232px;display:grid;gap:7px}
-#mapBox{line-height:0;background:var(--chip)}
-#map{width:100%;height:auto;display:block}
-#hist{display:grid;gap:2px;justify-items:stretch}
-#hist:empty{display:none}
-#hist div{display:grid;grid-template-columns:34px 1fr auto;font:500 13px/1.3 var(--mono);color:var(--dim);gap:6px;padding:0 6px}
-#hist div.best{color:var(--ink)} #hist i{font-style:normal;font-family:var(--disp);letter-spacing:.06em;font-weight:600}
-/* instruments */
-.gauge{bottom:var(--gb);width:252px}
-#gL{left:var(--gl)} #gR{right:var(--gr)}
-.read{display:flex;align-items:baseline;gap:7px}
-#gR .read{justify-content:flex-end}
-.read b{font:700 66px/.92 var(--disp);letter-spacing:-.01em}
-.read small{font:600 13px/1 var(--disp);letter-spacing:.13em;color:var(--dim)}
-.bar{display:grid;grid-template-columns:52px 1fr 54px;align-items:center;gap:7px;margin-top:6px}
-.bar i{display:block;height:7px;background:rgba(255,255,255,.2);position:relative;overflow:hidden}
-.bar i u{position:absolute;inset:0 auto 0 0;background:var(--x1);width:0}
-.bar i s{position:absolute;top:0;bottom:0;width:2px;background:#fff;left:75%}
-.bar.wt{grid-template-columns:52px 1fr 66px}
-.bar span:last-child{font:600 13px/1 var(--mono);text-align:right}
-#chips{left:50%;transform:translateX(-50%);bottom:var(--gb);display:flex;gap:4px;align-items:flex-end;white-space:nowrap;text-shadow:none}
-.cc{display:flex;flex-direction:column;align-items:stretch;gap:2px;text-align:center}
-.cc b{font:600 14px/1 var(--mono);color:var(--ink);text-shadow:0 1px 3px rgba(0,0,0,.8)}
-.chip{font:700 12px/1 var(--disp);letter-spacing:.08em;padding:4px 6px;background:var(--chip);color:var(--dim)}
-.chip.on{background:var(--stbd);color:#06170e}
-.chip.chg{background:var(--stbd);color:#06170e}.chip.dis{background:var(--warn);color:#201500}
-.chip.boost.on{background:var(--warn);color:#201500}
-#fans{position:fixed;left:var(--gl);top:calc(var(--gt) + 84px);width:auto;height:min(292px,calc(100% - 262px));aspect-ratio:250/292;pointer-events:none}
-#bFans.on{background:var(--cyan);color:#06222c}
-#menuPill,#bHelp,#bFans{pointer-events:auto;font-size:12px;padding:4px 7px;letter-spacing:.08em}
-#bHelp{background:var(--ink);color:#10141a}#bHelp:hover{background:#fff}
-/* banner */
-#banner{top:27%;left:50%;transform:translate(-50%,-50%);text-align:center;font:700 italic 50px/1 var(--disp);letter-spacing:.01em;text-shadow:0 2px 18px rgba(0,0,0,.7);opacity:0;transition:opacity .2s;white-space:nowrap}
-#banner small{display:block;font:600 19px/1.2 var(--disp);font-style:normal;letter-spacing:.06em;margin-top:5px}
-/* command bar */
-#menu{z-index:3;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--gb) + 48px);display:flex;align-items:center;gap:12px;background:var(--scrim);padding:7px 8px 7px 12px;max-width:calc(100% - 556px);box-sizing:border-box}
-#menu h1{margin:0;font:700 italic 15.5px/1.02 var(--disp);letter-spacing:.015em;width:128px;flex:none}
-#menu h1 em{color:var(--x1);font-style:inherit}
-.btns,#viewBtns{display:flex;gap:4px}
-button{font:700 14px/1 var(--disp);letter-spacing:.07em;text-transform:uppercase;border:0;background:rgba(255,255,255,.13);color:var(--ink);padding:9px 10px;cursor:pointer;white-space:nowrap}
-button:hover{background:rgba(255,255,255,.26)} button:focus-visible{outline:2px solid var(--cyan);outline-offset:1px}
-button.pri{background:var(--x1);color:#150e05;padding-inline:16px}
-button.pri:hover{background:#ff8128}
-#bFold.lock{opacity:.45}
-#viewBtns button.on{background:var(--ink);color:#10141a}
-/* help overlay: pauses the race, three columns, sized from viewport height so it never scrolls */
-#help{--f:clamp(10px,1.95vh,16px);position:fixed;inset:0;z-index:20;display:grid;place-items:center;background:rgba(5,8,12,.72);padding:12px max(16px,env(safe-area-inset-right,0px)) 12px max(16px,env(safe-area-inset-left,0px));box-sizing:border-box;font:500 var(--f)/1.28 var(--disp)}
-#helpIn{width:min(1120px,100%);max-height:100%;overflow:auto;box-sizing:border-box;background:rgba(8,12,18,.94);padding:calc(var(--f)*1) calc(var(--f)*1.3)}
-#helpTop{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:calc(var(--f)*.7)}
-#helpTop .lab{color:var(--x1);font-size:calc(var(--f)*.85);display:block;margin-bottom:2px}
-#help h2{margin:0;font:700 calc(var(--f)*1.75)/1 var(--disp);letter-spacing:.02em}
-#helpCols{display:grid;grid-template-columns:1fr 1.25fr 1fr;gap:calc(var(--f)*1.5)}
-#help section{min-width:0}
-#help h3{margin:0 0 calc(var(--f)*.4);font:700 calc(var(--f)*.95)/1 var(--disp);letter-spacing:.11em;text-transform:uppercase;color:var(--dim)}
-#help ol{margin:0;padding:0;list-style:none;counter-reset:s;display:grid;gap:calc(var(--f)*.42)}
-#help li{counter-increment:s;display:grid;grid-template-columns:calc(var(--f)*1.5) 1fr}
-#help li::before{content:counter(s);font-weight:700;color:var(--x1)}
-#help kbd{font:inherit;font-weight:700;color:var(--ink)}
-table{border-collapse:collapse;width:100%;font:inherit} th{font-weight:600;font-size:calc(var(--f)*.8);letter-spacing:.1em;text-transform:uppercase;color:var(--dim);text-align:left;padding:0 8px 3px 0} td{padding:calc(var(--f)*.13) 8px calc(var(--f)*.13) 0;border-top:1px solid rgba(255,255,255,.12);white-space:nowrap}
-td:nth-child(2),td:nth-child(3){font-weight:600}
-.key{display:grid;gap:calc(var(--f)*.42)}
-.key div{display:grid;grid-template-columns:calc(var(--f)*2.1) 1fr;gap:calc(var(--f)*.55);align-items:center}
-.key i{height:calc(var(--f)*1.2);display:block}
-.key .ck{background:repeating-conic-gradient(#fff 0 25%,#111 0 50%) 0 0/calc(var(--f)*.6) calc(var(--f)*.6)}
-.key .rule{display:block;margin-top:calc(var(--f)*.2);padding-top:calc(var(--f)*.4);border-top:1px solid rgba(255,255,255,.12)}
-#gp{font:600 calc(var(--f)*.9)/1.2 var(--disp);letter-spacing:.03em;color:var(--dim);margin:0 0 0 auto;text-align:right}
-#gp.ok{color:var(--stbd)}
-@media (max-width:760px){#ccLto{display:none}#fans{top:calc(var(--gt) + 150px);height:min(190px,calc(100% - 330px))}}
-@media (max-width:860px) and (min-height:520px){#help{--f:clamp(10.5px,1.65vh,14px)}#helpCols{grid-template-columns:1fr 1fr;gap:calc(var(--f)*.9) calc(var(--f)*1.2)}#helpCtl{grid-column:1/3;grid-row:1}#helpTop{flex-wrap:wrap}#gp{order:3;flex-basis:100%;text-align:left;margin:0}td,th{padding-right:6px}}
-@media (max-width:440px){#bHelp .wide{display:none}#help{--f:12.5px;padding:6px 8px}#helpIn{padding:9px 10px}#helpCols{grid-template-columns:1fr}#helpCtl{grid-column:1}.key .rule{margin-top:0}}
-#share{position:fixed;inset:0;z-index:21;display:grid;place-items:center;background:rgba(5,8,12,.72);padding:12px max(16px,env(safe-area-inset-right,0px)) 12px max(16px,env(safe-area-inset-left,0px));box-sizing:border-box}
-#shareIn{width:min(480px,100%);max-height:100%;overflow:auto;box-sizing:border-box;background:rgba(8,12,18,.95);padding:16px}
-#shareIn .lab{color:var(--x1);display:block;margin-bottom:3px}
-#shareIn h2{margin:0;font:700 26px/1 var(--disp);letter-spacing:.02em}
-#shareTime{font:600 44px/1.15 var(--mono);letter-spacing:-.03em;margin:8px 0}
-#shareText{display:block;width:100%;box-sizing:border-box;resize:none;background:rgba(255,255,255,.08);color:var(--ink);border:1px solid var(--line);padding:8px;font:500 16px/1.3 var(--disp);margin-bottom:10px}
-#shareX{display:inline-block;font:700 14px/1 var(--disp);letter-spacing:.07em;text-transform:uppercase;text-decoration:none;background:var(--x1);color:#150e05;padding:9px 16px}
-#shareX:hover{background:#ff8128}#shareX:focus-visible,#shareText:focus-visible{outline:2px solid var(--cyan);outline-offset:1px}
-#loading{position:fixed;inset:0;display:grid;place-items:center;text-align:center;padding-inline:16px;background:#0b1118;font:700 italic 30px var(--disp);transition:opacity .4s}
-@media (max-width:1180px){#nextSub{display:none}#nextTitle{font-size:25px}#rail{width:190px}#menu{max-width:none;padding-left:8px}#menu h1{display:none}.gauge{width:210px}}
-@media (max-width:1000px){#menu{bottom:calc(var(--gb) + 108px)}}
-@media (max-width:980px){#seq{display:none}#tower{grid-template-columns:auto}#splits{display:none}}
-@media (max-width:760px){
-  #next{top:calc(var(--gt) + 104px);left:var(--gl);transform:none}#nextArrow{width:38px;height:38px}#nextArrow svg{width:25px;height:25px}#nextTitle{font-size:21px}
-  #clock{font-size:27px}#tower{padding-left:50px}#logo{width:44px;height:44px}#rail{width:150px}#hist{display:none}
-  .gauge{width:calc(50% - 24px)}.read b{font-size:46px}.bar{grid-template-columns:34px 1fr 48px;gap:4px}.bar span:last-child{font-size:12px}.bar.wt{grid-template-columns:34px 1fr 58px}.bar span.lab{font-size:10px;letter-spacing:.03em}
-  #chips{bottom:calc(var(--gb) + 112px);left:var(--gl);right:var(--gr);transform:none;justify-content:center}
-  #menu{left:var(--gl);right:var(--gr);transform:none;max-width:none;bottom:calc(var(--gb) + 150px);flex-wrap:wrap;justify-content:center;gap:6px;padding:7px}#menu h1{display:none}
-  #banner{font-size:32px}}
-@media (max-height:600px){#hist{display:none}.read b{font-size:50px}#scrimB{height:130px}}
-</style>
-<canvas id="gl"></canvas><canvas id="o2d"></canvas>
+@@CSS@@</style>
+<canvas id="view3d"></canvas><canvas id="o2d"></canvas>
 <div id="scrimT"></div><div id="scrimB"></div>
 <div class="hud" id="tower"><img id="logo" alt="X1 Racing" src="data:image/png;base64,@@LOGO@@">
   <div id="lapTop"><span id="lapNo">ON THE PAD</span><span id="pilotChip">SI PILOT</span></div>
@@ -166,19 +38,26 @@ td:nth-child(2),td:nth-child(3){font-weight:600}
 <div class="hud" id="chips"><span class="cc"><b id="vHold">0 FT</b><span class="chip on" id="cAlt">ALT HOLD</span></span><span class="cc"><b id="vBoost">0%</b><span class="chip boost" id="cBoost">BOOST</span></span><span class="cc" id="ccTh"><b id="vTh">0%</b><span class="chip" id="cTh">PUSHERS</span></span><span class="cc" id="ccLto"><b id="vLto">0 KW</b><span class="chip" id="cLto">LTO</span></span><button id="bFans">Fans</button><button id="menuPill">Menu</button><button id="bHelp"><span class="wide">Press H for </span>help</button></div>
 <canvas id="fans" width="250" height="292" hidden></canvas>
 <div class="hud" id="banner"></div>
-<div id="menu">
+<div id="touch" hidden>
+  <div id="tPad"><div id="tBoost">Boost</div></div>
+  <div id="tAlt"><button id="tUp" aria-label="Climb">&#9650;</button><button id="tDn" aria-label="Descend">&#9660;</button></div>
+  <div id="tZone"><div id="tBase"><div id="tKnob"></div></div></div>
+  <button id="tGo" class="pri" hidden>Take off</button>
+</div>
+<div id="pb" hidden><span id="pbText"></span><button id="pbBtn" class="pri">Post on X</button><button id="pbX" aria-label="Dismiss">&#10005;</button></div>
+<div id="sndHint">Click, tap or press a key for sound</div><div id="menu">
   <h1>X1 RACING <em>SKYRACER</em> FLYING CAR GRAND PRIX</h1>
   <div class="btns"><button id="bFly">Fly it</button><button id="bDemo">Watch SI</button></div>
   <button id="bFold">Unfold</button>
-  <div id="viewBtns"><button id="v0" class="on">Chase</button><button id="v1">Cockpit</button><button id="v2">Zoomed out</button></div>
+  <div id="viewBtns"><button id="v0" class="on">Chase</button><button id="v1">Cockpit</button><button id="v2">Bird</button><button id="v3" class="lock" hidden title="Watch SI from a cruise ship deck">Ship</button><button id="v4" hidden title="Race broadcast: the camera cuts between shots">TV</button></div><button id="bLaunch" hidden title="Falcon 9 T-minus countdown (C)">Launch F9</button><button id="bDetail" title="Cruise ships in the infield (K)">Max detail</button><button id="bTw" title="Dusk light (O)">Twilight</button><button id="bLiv" title="Next paint scheme (Y)">Livery: White</button><button id="bLB" title="Leaderboard (B)">Leaderboard</button><button id="bLand" class="tOnly">Land</button><button id="bPadR" class="tOnly">Back to pad</button><button id="bVR" hidden>VR</button>
   
 </div>
 <div id="help" hidden><div id="helpIn">
-  <div id="helpTop"><div><span class="lab">Paused</span><h2>How to fly</h2></div><div id="gp">No controller found. Press any controller button to connect it.</div><button class="pri" id="bHelpX">Resume</button></div>
+  <div id="helpTop"><div><span class="lab">Paused</span><h2>How to fly</h2><span class="lab" id="build" style="display:block;margin-top:4px;letter-spacing:.06em;text-transform:none"></span></div><div id="gp">No controller found. Press any controller button to connect it.</div><button class="pri" id="bHelpX">Resume</button></div>
   <div id="helpCols">
     <section><h3>Fly a lap</h3><ol>
       <li><span>Press <kbd>A</kbd> or <kbd>Enter</kbd> to lift off.</span></li>
-      <li><span>Hold <kbd>RT</kbd> or <kbd>Shift</kbd> for the pushers.</span></li>
+      <li><span>Push the right stick (or <kbd>&uarr;</kbd>) forward to accelerate. Let go to hold the speed, pull back to brake. <kbd>RB</kbd> or <kbd>Space</kbd> is boost.</span></li>
       <li><span>Fly between the checkered spires to start the clock.</span></li>
       <li><span>Bank to follow the chevrons. Altitude holds itself.</span></li>
       <li><span>Round all seven spires, then cross the gate again.</span></li>
@@ -186,23 +65,28 @@ td:nth-child(2),td:nth-child(3){font-weight:600}
     <section id="helpCtl"><h3>Controls</h3><table>
       <tr><th>Action</th><th>Controller</th><th>Keyboard</th></tr>
       <tr><td>Take off</td><td>A</td><td>Enter</td></tr>
-      <tr><td>Bank, pitch</td><td>Right stick</td><td>Arrows</td></tr>
+      <tr><td>Bank</td><td>Right stick left, right</td><td>&larr; &rarr;</td></tr>
+      <tr><td>Speed: faster, hold, brake</td><td>Right stick forward, centre, back</td><td>&uarr;, none, &darr;</td></tr>
       <tr><td>Yaw, climb</td><td>Left stick</td><td>A D, W S</td></tr>
-      <tr><td>Pushers</td><td>RT</td><td>Shift</td></tr>
-            <tr><td>Boost (variable)</td><td>LT</td><td>Space</td></tr>
+      <tr><td>Boost (hold)</td><td>RB, LT or RT</td><td>Space or Shift</td></tr>
       <tr><td>Altitude hold</td><td>X</td><td>G</td></tr>
       <tr><td>Change view</td><td>Y</td><td>V</td></tr>
       <tr><td>Path on or off</td><td>LB</td><td>P</td></tr>
       <tr><td>Land on the pad</td><td>D-pad down</td><td>L</td></tr>
       <tr><td>Fold or unfold on the pad</td><td>D-pad up</td><td>F</td></tr>
       <tr><td>Fan power meter</td><td>D-pad right</td><td>N</td></tr>
+      <tr><td>Max detail (cruise ships)</td><td>None</td><td>K</td></tr>
+      <tr><td>Twilight</td><td>D-pad left</td><td>O</td></tr>
+      <tr><td>Livery: White, XXONE 51, Yonder 01</td><td>Livery button</td><td>Y</td></tr>
+      <tr class="f9only"><td>Falcon 9 countdown (watching SI)</td><td>Launch F9 button</td><td>C</td></tr>
       <tr><td>Hand over to SI</td><td>View</td><td>U</td></tr>
       <tr><td>Back to pad</td><td>B</td><td>R</td></tr>
       <tr><td>Help and pause</td><td>Menu</td><td>H</td></tr>
       <tr><td>Show or hide menu bar</td><td>None</td><td>Esc</td></tr>
       <tr><td>Sound on or off</td><td>None</td><td>M</td></tr>
       <tr><td>Post best lap to X</td><td>None</td><td>T</td></tr>
-    </table></section>
+      <tr><td>Leaderboard</td><td>None</td><td>B</td></tr>
+    </table><span class="rule" id="touchHelp" hidden>Touch: one stick, under your right thumb. Sideways banks (a hard push is a full-bank turn with the pushers backed off), forward accelerates, centred holds the speed, back brakes. Left thumb holds Boost. Take off, Land and Back to pad are on screen and in the menu.</span><span class="rule f9only">Falcon 9 &amp; Launching Pad model by Aashish_3D on Sketchfab, licensed CC BY 4.0 (reduced in detail for the sim).</span><span class="rule" id="vrHelp" hidden>Meta Quest: press VR. Left hand: stick yaw and climb, trigger boost, grip land, X altitude hold, <b>Y menu</b>, stick click fold. Right hand: stick bank, and forward and back for speed (centred holds it), trigger boost, grip hand over to SI, A take off (or Fly it when watching SI), B next view, stick click path. In the menu point with the right hand and pull the trigger: Fly it or Watch SI, every view, back to pad, fold, max detail, twilight, sound and Exit VR. Ship view: A jumps to the nearest deck, right stick zooms, stick click range finder. Pool deck: A swaps ships. On the ship (Ship view or Pool deck) while SI flies, X starts the Falcon 9 T-minus countdown; it is also in the menu.</span></section>
     <section><h3>Read the course</h3><div class="key">
       <div><i style="background:var(--port)"></i><span>Red spire: turn left</span></div>
       <div><i style="background:var(--stbd)"></i><span>Green spire: turn right</span></div>
@@ -214,12 +98,110 @@ td:nth-child(2),td:nth-child(3){font-weight:600}
     </div></section>
   </div>
 </div></div>
+<div id="lb" hidden><div id="lbIn">
+  <div id="lbTop"><div><span class="lab">Paused</span><h2>Leaderboard</h2><span id="lbSrc"></span></div><button class="pri" id="bLbX">Resume</button></div>
+  <div id="lbMe"><label for="lbHandle">Your X handle</label><div class="hrow"><span>@</span><input id="lbHandle" maxlength="16" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="yourhandle"><button id="bLbSave">Save</button></div><div id="lbMsg"></div></div>
+  <div id="lbList"></div>
+  <div id="lbBest"></div>
+  <div class="btns"><button id="bLbPost" class="pri">Post my best on X</button><button id="bLbRef">Refresh</button></div>
+</div></div>
 <div id="share" hidden><div id="shareIn">
   <span class="lab">Paused</span><h2>Post your best lap</h2>
   <div id="shareTime">--</div>
   <textarea id="shareText" rows="3" maxlength="280" aria-label="Post text"></textarea>
   <div class="btns"><a class="pri" id="shareX" href="https://x.com/intent/post" target="_blank" rel="noopener">Post on X</a><button id="bShareCopy">Copy text</button><button id="bShareX">Close</button></div>
 </div></div>
-<div id="loading"><div><img alt="" src="data:image/png;base64,@@LOGO@@"><div>X1 RACING SKYRACER FLYING CAR GRAND PRIX</div></div></div>
+<div id="intro" hidden><div class="lbx t"></div><div class="lbx b"></div><div id="introFade"></div>
+  <div id="introCap"><b></b><span></span></div>
+  <div id="introCard"><img id="introLogo" alt="X1 Racing"><div class="ttl">SkyRacer Flying Car Grand Prix</div><div id="introGo">Press any key to start</div></div></div>
+<div id="loading"><div id="ldBg"></div><div id="ldStage"><img id="ldLogo" alt="X1 Racing" src="data:image/png;base64,@@X1FLAG@@"><canvas id="ldGauge" width="560" height="330" aria-hidden="true"></canvas><div id="ldWord">BOOST</div><div id="ldMsg" hidden></div></div></div>
+<script>
+/* ---------- loading screen: the X1 logo and a boost gauge ----------
+   The needle reads loading progress, but moves like a real boost needle: a spring with a little overshoot, a flutter
+   that grows with boost, and a ceiling that rises with time so it never reaches full boost before 2.5 s however fast the
+   load is. Progress comes from the page as it loads: X1L.p(fraction) at each milestone, the last when the first frame of
+   the sim has been drawn. Then the needle sweeps to full boost, holds there 0.5 s, and the logo and gauge fly out past
+   the camera while an iris opens on the sim. X1L.onReveal is called as the iris starts to open. */
+(() => {
+  const L = (window.X1L = { prog: 0.04, failed: false, onReveal: null, p(f) { L.prog = Math.max(L.prog, f); }, fail(m) {
+    L.failed = true; const e = document.getElementById('ldMsg'); e.textContent = m; e.hidden = false;
+    document.getElementById('ldWord').textContent = 'STALL'; } });
+  const cv = document.getElementById('ldGauge'), g = cv.getContext('2d'), W = cv.width, H = cv.height,
+    cx = W / 2, cy = 268, R = 222,
+    A0 = Math.PI * 1.02, A1 = Math.PI * 1.98,  // from just below 9 o'clock to just below 3, across the top
+    MIN_T = 2.5, HOLD = 0.5;
+  const ang = (x) => A0 + (A1 - A0) * x;
+  // green, lime, yellow, orange, red, as on the reference gauge
+  const STOPS = [[0, [62, 220, 64]], [0.28, [196, 236, 34]], [0.45, [250, 214, 20]], [0.66, [250, 128, 22]], [0.82, [236, 34, 40]], [1, [236, 30, 42]]];
+  const col = (x) => { let i = 1; while (i < STOPS.length - 1 && STOPS[i][0] < x) i++; const [a, ca] = STOPS[i - 1], [b, cb] = STOPS[i], k = Math.min(1, Math.max(0, (x - a) / (b - a)));
+    return ca.map((c, j) => Math.round(c + (cb[j] - c) * k)); };
+  const GAPS = [0.16, 0.36, 0.56, 0.74, 0.88];
+  function dial(lit) {
+    // a crescent: thin at the start, thick at full boost, cut by gaps; lit up to the needle, dim beyond
+    const N = 220;
+    for (let i = 0; i < N; i++) {
+      const x0 = i / N, x1 = (i + 1) / N, xm = (x0 + x1) / 2;
+      if (GAPS.some((q) => Math.abs(xm - q) < 0.011)) continue;
+      const w = 8 + 50 * Math.pow(xm, 1.35), c = col(xm), on = xm <= lit + 0.002;
+      g.beginPath(); g.arc(cx, cy, R, ang(x0), ang(x1) + 0.004); g.arc(cx, cy, R - w, ang(x1) + 0.004, ang(x0), true); g.closePath();
+      g.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${on ? 1 : 0.16})`; g.fill();
+    }
+    // MAX in the last red segment, laid along the radius so it reads level at the 3 o'clock end
+    const xm = (GAPS[GAPS.length - 1] + 1) / 2, a = ang(xm), w = 8 + 50 * Math.pow(xm, 1.35);
+    g.save(); g.translate(cx + Math.cos(a) * (R - w / 2), cy + Math.sin(a) * (R - w / 2)); g.rotate(a);
+    g.font = 'italic 800 24px "Barlow Condensed","Arial Narrow",sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillStyle = `rgba(255,255,255,${lit >= GAPS[GAPS.length - 1] ? 1 : 0.4})`; g.fillText('MAX', 0, 1);
+    g.restore();
+  }
+  function needle(x, glow) {
+    const a = ang(Math.min(1.03, Math.max(-0.02, x))), len = R - 52;
+    g.save(); g.translate(cx, cy); g.rotate(a);
+    if (glow > 0) { g.shadowColor = `rgba(255,60,40,${0.8 * glow})`; g.shadowBlur = 26 * glow; }
+    g.fillStyle = '#fff';
+    g.beginPath(); g.moveTo(-34, -7); g.lineTo(len, -1.2); g.lineTo(len, 1.2); g.lineTo(-34, 7); g.arcTo(-44, 7, -44, 0, 7); g.arcTo(-44, -7, -34, -7, 7); g.closePath(); g.fill();
+    g.beginPath(); g.arc(0, 0, 12, 0, 7); g.fill();
+    g.restore();
+  }
+  let x = 0, v = 0, t0 = performance.now(), last = t0, full = -1, out = -1;
+  const st = document.getElementById('ldStage'), ld = document.getElementById('loading');
+  function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000), t = (now - t0) / 1000; last = now;
+    if (out >= 0) return reveal(now);
+    // where the needle wants to be: the load, but held back early on so it climbs like a spooling turbo
+    const ceil = 0.94 * (1 - Math.pow(1 - Math.min(1, t / MIN_T), 1.7));
+    let tgt = Math.min(L.prog * 0.96, ceil);
+    if (L.prog >= 1 && t >= MIN_T && !L.failed) tgt = 1;
+    // flutter: a few incommensurate wobbles, bigger as boost builds
+    const fl = (0.006 + 0.02 * x) * (Math.sin(now * 0.031) * 0.5 + Math.sin(now * 0.0173 + 1) * 0.35 + Math.sin(now * 0.0519 + 2) * 0.15);
+    // a spring: quick, slightly underdamped, like a gauge needle on its damper
+    const k = 70, c = 2 * 0.55 * Math.sqrt(k);
+    v += (k * (tgt + (tgt < 1 ? fl : fl * 0.4) - x) - c * v) * dt; x += v * dt;
+    if (x > 1.025) { x = 1.025; v = Math.min(0, v); }
+    L.x = x; L.t = t;
+    if (tgt === 1 && x > 0.97 && full < 0) full = now;
+    g.clearRect(0, 0, W, H);
+    dial(x);
+    const glow = Math.max(0, (x - 0.8) / 0.2);
+    needle(x, glow);
+    if (full >= 0 && now - full >= HOLD * 1000) { out = now; L.full = (full - t0) / 1000; L.out = (now - t0) / 1000; if (L.onReveal) try { L.onReveal(); } catch (e) { console.error(e); } }
+    requestAnimationFrame(frame);
+  }
+  // the reveal: the logo and gauge rush forward past the camera, tipping back, while an iris opens in the black behind
+  // them on the sim
+  const bg = document.getElementById('ldBg');
+  function reveal(now) {
+    const u = Math.min(1, (now - out) / 900), e = u * u * (3 - 2 * u), ez = u * u;
+    st.style.transform = `translateZ(${ez * 860}px) rotateX(${-e * 28}deg)`;
+    st.style.opacity = String(1 - Math.max(0, (u - 0.6) / 0.4));
+    const k = Math.max(0, (u - 0.12) / 0.88), r = Math.pow(k * k * (3 - 2 * k), 1.3) * 156 - 6;
+    bg.style.webkitMaskImage = bg.style.maskImage = `radial-gradient(circle at 50% 56%, transparent ${r}%, #000 ${r + 6}%)`;
+    if (u < 1) requestAnimationFrame(frame);
+    else ld.hidden = true;
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script>window.X1L && X1L.p(0.4);</script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>
+<script>window.X1L && X1L.p(0.5);</script>

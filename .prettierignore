@@ -1,0 +1,7 @@
+dist/
+airframe/
+assets/
+src/shell.html
+src/style.css
+*.md
+*.json
