@@ -4,6 +4,13 @@ reset('demo');
 resize();
 window.__x1 = {
   banner,
+  vPanel,
+  vMenu,
+  vmDraw,
+  vrPanel,
+  VRS,
+  vrAutoT,
+  rig,
   CLIP,
   SP,
   f9Unload,

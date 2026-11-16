@@ -10,6 +10,9 @@
    less often when the frame rate sags (PERF.k). The side-stick follows the
    right stick. */
 const DASH = {
+  hp: new THREE.Vector3(), // headset: head position, facing, and the way to the screen
+  hf: new THREE.Vector3(),
+  ht: new THREE.Vector3(),
   scr: null,
   stick: null,
   rt: null,
@@ -249,7 +252,7 @@ function dashMapBase() {
     g.stroke();
     g.fillStyle = '#fff';
     g.font = 'bold 9px system-ui,sans-serif';
-    g.fillText('F9', X + 12, Y + 2);
+    g.fillText(LV.short, X + 12, Y + 2);
   }
   return c;
 }
@@ -363,11 +366,25 @@ function dashTick(dt, pos, hdg) {
   }
   DASH.acc += dt;
   DASH.macc += dt;
-  if (DASH.acc < 0.05 * PERF.k) return;
+  if (DASH.acc < (XR() ? 0.1 : 0.05) * PERF.k) return;
   DASH.acc = 0;
   // seen from the seat, or from outside only close up and in frame (through the canopy)
   const sw = DASH.scr.getWorldPosition(DASH.c);
-  if (G.camV !== 1 || G.f9cam) {
+  if (XR()) {
+    /* In the headset the nose camera's extra draw of the scene is a frame-time spike, and a missed frame shows as judder
+       while the head turns: it is drawn only while you are looking at the dash (within 45 degrees) and not turning
+       your head quickly (under about 40 degrees a second). */
+    const xc = renderer.xr.getCamera();
+    xc.updateMatrixWorld(true);
+    const hp = DASH.hp.setFromMatrixPosition(xc.matrixWorld),
+      fw = DASH.hf.set(0, 0, -1).transformDirection(xc.matrixWorld),
+      to = DASH.ht.copy(sw).sub(hp).normalize(),
+      turn = DASH.hq0 ? fw.angleTo(DASH.hq0) / Math.max(DASH.hdt, 1e-3) : 0;
+    DASH.hq0 = (DASH.hq0 || new THREE.Vector3()).copy(fw);
+    DASH.hdt = 0.1 * PERF.k;
+    if (fw.dot(to) < Math.cos(45 * D2R) || turn > 40 * D2R) return;
+  }
+  if (G.camV !== 1 || (G.f9cam && G.f9cam.view !== 1)) {
     // G.camV: the cockpit view, or the opening's cockpit race clip
     if (XR() ? rig.position.distanceTo(sw) > 8 : cam.position.distanceTo(sw) > 8) return;
     if (!XR()) {

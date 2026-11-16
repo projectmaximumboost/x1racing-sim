@@ -5,9 +5,14 @@
   dist/X1_SkyRacer_GrandPrix_standalone.html  the Grand Prix, full document (opens directly in a browser)
   dist/X1_SkyRacer_Falcon9.html               the same sim plus the Falcon 9 launch pad, page content only
   dist/X1_SkyRacer_Falcon9_standalone.html    ... full document
+  dist/X1_SkyRacer_Starship.html              the same sim with the Starship tower, stack and catches in place of Falcon 9
+  dist/X1_SkyRacer_Starship_standalone.html   ... full document
 
-The two pages differ only in the F9_ON constant and the page title. The Falcon 9 page also loads
-dist/X1_SkyRacer_F9.glb from the folder it is served from.
+The pages differ in the F9_ON constant, the page title and the launch-site module: 26_falcon9.js (the Falcon 9 page,
+which loads dist/X1_SkyRacer_F9.glb from the folder it is served from) or, for the Starship page, the Starship launch
+page's tower code src/starship/26_starship.js plus src/game/26_starship.js, its hooks into the sim (it loads
+dist/X1_SkyRacer_Starship.glb the same way). Both provide the same functions (f9Tick, f9Count, f9Hit ...), so the rest
+of the sim is shared.
 
 Before writing anything the joined script is checked:
   - it must parse (node --check, which also catches a let/const declared twice across files)
@@ -21,22 +26,29 @@ R = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 rd = lambda p: open(os.path.join(R, p), encoding="utf-8").read()
 
 VARIANTS = [
-    # file stem, page title, F9_ON
-    ("X1_SkyRacer_GrandPrix", "X1 Racing SkyRacer Flying Car Grand Prix", "false"),
-    ("X1_SkyRacer_Falcon9", "X1 SkyRacer Falcon 9", "true"),
+    # file stem, page title, F9_ON (a launch site is on the shore), the launch-site module left out of this page
+    ("X1_SkyRacer_GrandPrix", "X1 Racing SkyRacer Flying Car Grand Prix", "false", "26_starship.js"),
+    ("X1_SkyRacer_Falcon9", "X1 SkyRacer Falcon 9", "true", "26_starship.js"),
+    ("X1_SkyRacer_Starship", "X1 SkyRacer Starship", "true", "26_falcon9.js"),
 ]
+# the Starship page also builds in the Starship launch page's tower code, just before its hooks (src/game/26_starship.js)
+EXTRA = {"X1_SkyRacer_Starship": {"26_starship.js": "starship/26_starship.js"}}
 
 # src/game/*.js are sections of one script, joined in file-name order (they share one scope)
-files = sorted(f for f in os.listdir(os.path.join(R, "src/game")) if f.endswith(".js"))
-parts = {f: rd("src/game/" + f) for f in files}
-# each file is plain top-level statements; together they run inside one strict-mode function, so nothing leaks to the page
-game = "(()=>{'use strict';\n" + "\n".join(parts[f] for f in files) + "\n})();\n"
+ALL = sorted(f for f in os.listdir(os.path.join(R, "src/game")) if f.endswith(".js"))
+parts = {f: rd("src/game/" + f) for f in ALL}
+parts["starship/26_starship.js"] = rd("src/starship/26_starship.js")
+
+
+def joined(files):
+    # each file is plain top-level statements; together they run inside one strict-mode function, so nothing leaks
+    return "(()=>{'use strict';\n" + "\n".join(parts[f] for f in files) + "\n})();\n"
 phys = rd("src/physics.js").replace("if(typeof module!=='undefined')module.exports=X1P;", "")
 phys = re.sub(r"if\s*\(typeof module\s*!==\s*['\"]undefined['\"]\)\s*module\.exports\s*=\s*X1P;", "", phys)
 course = re.sub(r"if\s*\(typeof module\s*!==\s*['\"]undefined['\"]\).*", "", rd("src/course.js"))
 
 
-def check(script):
+def check(script, files, game):
     """Fail the build on the mistakes a shared scope makes easy."""
     errs = []
     # 1. a top-level function declared in two places (the later one silently wins)
@@ -102,12 +114,20 @@ liveries = rd("src/liveries.json").strip()   # XXONE 51 and Yonder 01: tools/liv
 head = '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>[hidden]{display:none!important}</style></head><body>'
 os.makedirs(os.path.join(R, "dist"), exist_ok=True)
 
-checked = False
-for stem, title, f9 in VARIANTS:
+checked = set()
+for stem, title, f9, skip in VARIANTS:
+    files = []
+    for f in ALL:
+        if f == skip:
+            continue
+        if f in EXTRA.get(stem, {}):
+            files.append(EXTRA[stem][f])
+        files.append(f)
+    game = joined(files)
     script = phys + "\n" + course + "\n" + game.replace("@@BUILD@@", build).replace("@@F9@@", f9)
-    if not checked:
-        check(script)
-        checked = True
+    if stem not in checked:
+        check(script, files, game)
+        checked.add(stem)
     script = script.replace("@@X1FLAG@@", flag)
     out = (shell.replace("@@TITLE@@", title).replace("@@X1FLAG@@", flag) + '<script id="glb" type="text/plain">' + glb + "</script>\n"
            + '<script id="liveries" type="application/json">' + liveries + "</script>\n<script>" + script + "</script>\n")

@@ -248,20 +248,9 @@ function tvLOS(a, b) {
   return true;
 }
 function tvTag() {
-  const s = G.s,
-    p = proj(ned(s.p));
+  // the TV view is a clean broadcast picture: only the camera label in the corner, nothing over the car
   g2.shadowColor = 'rgba(0,0,0,.6)';
   g2.shadowBlur = 5;
-  if (G.camV !== 1 && !p.behind) {
-    g2.font = '700 15px "Barlow Condensed",sans-serif';
-    g2.textAlign = 'center';
-    g2.fillStyle = '#fff';
-    g2.fillText(
-      'X1 SKYRACER  ·  SI  ·  ' + Math.round(s.V * 2.23694) + ' MPH',
-      p.x,
-      p.y - clamp(9000 / Math.max(cam.position.distanceTo(ned(s.p)), 1) / cam.fov, 26, 140),
-    );
-  }
   g2.textAlign = 'left';
   g2.font = '700 14px "Barlow Condensed",sans-serif';
   g2.fillStyle = '#e8690f';

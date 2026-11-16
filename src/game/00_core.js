@@ -32,7 +32,7 @@ const spireR = (h) => {
 const $ = (id) => document.getElementById(id);
 const F9_ON =
   '@@F9@@' ===
-  'true'; /* set by tools/build.py: true in the Falcon 9 page, false in the Grand Prix page. The launch pad, countdown and Starlink train only exist when it is true */
+  'true'; /* set by tools/build.py: true in the Falcon 9 and Starship pages, false in the Grand Prix page. The launch pad, countdown and Starlink train only exist when it is true */
 document.body.classList.toggle('f9', F9_ON);
 const gShip = (n, e) => (typeof shipGround === 'function' && G.s ? shipGround(e, n, -G.s.p[2]) : null);
 const env = {

@@ -14,6 +14,7 @@ const H = require('./harness');
 
 const GP = 'X1_SkyRacer_GrandPrix_standalone.html';
 const F9 = 'X1_SkyRacer_Falcon9_standalone.html';
+const SSP = 'X1_SkyRacer_Starship_standalone.html';
 const results = [];
 function ok(cond, what, detail) {
   results.push({ ok: !!cond, what, detail });
@@ -768,6 +769,274 @@ const checks = {
     ok(on.ready, 'Max detail on brings the Falcon 9 back', JSON.stringify(on));
     ok(errors.length === 0, 'no page errors', errors.join(' | ') || undefined);
     await ctx.close();
+  },
+  // Starship page: the Starship launch page's tower, booster and ship on the shore; one button runs the launch, the
+  // booster catch, the set-down on the mount and the ship catch, ending stacked; SI races laps around it untouched
+  async starship(b) {
+    const { page, errors, ctx } = await H.open(b, SSP);
+    await H.startSI(page);
+    await page.waitForFunction('__x1.F9.ready && __x1.F9.grid', null, { timeout: 120000 });
+    const r = await page.evaluate(() => {
+      const x = __x1,
+        F = x.F9,
+        { ST, STC } = F.dbg,
+        [cx, cy] = F.cxy,
+        out = { btn: document.getElementById('bLaunch').textContent };
+      const w = (lx, ly, lz) => {
+        const v = ST.root.localToWorld(new x.THREE.Vector3(lx, ly, lz));
+        return [v.x, -v.z, v.y];
+      };
+      out.flaps = ST.flaps.map((f) => f.userData.flap + f.userData.s).join(' ');
+      // the Flight 15 approach: the arms swing in while the ship is still well above them, it settles into them at
+      // walking pace, and it is upright and centred at contact
+      {
+        const D = F.dbg,
+          SS = D.STS;
+        D.stShipCatch();
+        let n = 0,
+          armsInAt = null,
+          vLast = null;
+        while (ST.mode === 'shipcatch' && n++ < 6000) {
+          D.stTick(0.05);
+          const sl = SS.lb - (ST.t - SS.end),
+            h = ST.sv.p.y - (D.STC.S_MID + D.STC.S_CATCH);
+          if (armsInAt == null && ST.arm.k < 0.5) armsInAt = h;
+          if (sl > 0 && sl < 0.3)
+            vLast = [-ST.sv.v.y, Math.abs(ST.sv.p.z), 2 * Math.acos(Math.min(1, Math.abs(ST.sv.q.w)))];
+        }
+        out.approach = { armsInAt, vLast, stacked: ST.stack };
+      }
+      out.shipIs = ST.M.ship && ST.M.ship.vehicle;
+      out.hitFar = x.f9Hit(cx + 400, cy, 30);
+      out.hitStack = x.f9Hit(...w(0, 100, 0));
+      out.hitBeside = x.f9Hit(...w(0, 100, 60));
+      // the button: countdown with the launch camera, then everything chains through to stacked again
+      x.f9Count();
+      out.cam = !!x.G.f9cam;
+      x.f9Tick(0.05);
+      out.btnOff = document.getElementById('bLaunch').textContent === 'Camera: Director'; // the camera switch now
+      const seen = new Set();
+      let n = 0;
+      out.order = [];
+      while ((ST.mode !== 'idle' || F.auto) && n++ < 20000) {
+        x.f9Tick(0.05);
+        if (!seen.has(ST.phase)) {
+          seen.add(ST.phase);
+          out.order.push(ST.phase);
+        }
+        if (F.auto && !seen.has('auto:' + F.auto)) {
+          seen.add('auto:' + F.auto);
+          out.order.push('auto:' + F.auto);
+        }
+      }
+      out.secs = n * 0.05;
+      x.f9Tick(0.05);
+      out.again =
+        !document.getElementById('bLaunch').disabled && document.getElementById('bLaunch').textContent === 'Starship';
+      out.stack = ST.stack;
+      out.bY = ST.bv.p.y - STC.B_MID;
+      out.sY = ST.sv.p.y - STC.S_MID;
+      out.sVis = ST.sv.vis;
+      out.held = ST.held;
+      x.f9CamEnd();
+      return out;
+    });
+    ok(r.btn === 'Starship', 'the launch button reads Starship', r.btn);
+    ok(
+      r.approach.armsInAt > 20 &&
+        r.approach.vLast[0] < 0.5 &&
+        r.approach.vLast[1] < 0.01 &&
+        r.approach.vLast[2] < 0.02 &&
+        r.approach.stacked,
+      'ship catch: the arms swing in with the ship still well above, it settles in slowly, upright and centred',
+      JSON.stringify(r.approach),
+    );
+    ok(
+      /Ship 42/.test(r.shipIs || '') && r.flaps === 'aft-1 fwd-1 aft1 fwd1',
+      'the ship is Ship 42 with its four hinged flaps',
+      r.shipIs + ': ' + r.flaps,
+    );
+    ok(
+      !r.hitFar && r.hitStack && !r.hitBeside,
+      'collisions: the stack, not the clear air',
+      JSON.stringify([r.hitFar, r.hitStack, r.hitBeside]),
+    );
+    const want = [
+      'auto:launch',
+      'LIFTOFF',
+      'HOT STAGING',
+      'BOOSTBACK BURN',
+      'LANDING BURN',
+      'CAUGHT',
+      'BOOSTER IN THE ARMS',
+      'auto:lower',
+      'BOOSTER ON THE MOUNT',
+      'auto:raise',
+      'STARSHIP RETURNING',
+      'BELLY FLOP',
+      'FLIP',
+      'STACKING',
+      'STACKED',
+    ];
+    const idx = want.map((p) => r.order.indexOf(p));
+    ok(
+      idx.every((i, k) => i >= 0 && (k === 0 || i > idx[k - 1])),
+      'one button: launch, booster caught, set on the mount, ship caught, restacked, in that order',
+      r.order.join(' > '),
+    );
+    ok(
+      r.cam && r.btnOff && r.again && r.stack && !r.held && r.sVis && Math.abs(r.bY) < 0.01 && Math.abs(r.sY) < 0.01,
+      'it ends stacked on the mount and the button comes back',
+      r.secs.toFixed(0) + ' s',
+    );
+    // the launch camera turns between the director, the cruise ship's bow and the cockpit, director for the catches
+    const rot = await page.evaluate(() => {
+      const x = __x1,
+        F = x.F9,
+        { ST, STT } = F.dbg,
+        seen = new Set();
+      x.f9Count();
+      let atCatch = null;
+      for (let n = 0; n < 8000 && x.G.f9cam; n++) {
+        x.f9Tick(0.05);
+        if (!x.G.f9cam || !F.dbg.f9Cam(0.05) || !x.G.f9cam) {
+          if (x.G.f9cam) seen.add(x.G.f9cam.view === 1 ? 'cockpit' : '?');
+          continue;
+        }
+        seen.add(['director', 'ship', 'cockpit'][x.G.f9cam.ri]);
+        if (F.auto === 'launch' && ST.mode === 'launch' && ST.t > STT.lbEnd && atCatch == null) atCatch = x.G.f9cam.ri;
+      }
+      // clicking during the show switches camera and holds it
+      x.f9Count();
+      for (let n = 0; n < 100; n++) x.f9Tick(0.05);
+      const lbl = () => document.getElementById('bLaunch').textContent,
+        clicks = [lbl()];
+      for (let k = 0; k < 3; k++) {
+        x.f9Count();
+        x.f9Tick(0.05);
+        for (let n = 0; n < 400; n++) F.dbg.f9Cam(0.05); // 20 s: a hand-picked camera stays put
+        clicks.push(lbl() + (x.G.f9cam.view === 1 ? ' (cockpit view)' : ''));
+      }
+      const live = !document.getElementById('bLaunch').disabled;
+      x.setView(0); // leaving for a race view: the next click comes back to the director
+      x.f9Tick(0.05);
+      clicks.push(lbl());
+      x.f9Count();
+      x.f9Tick(0.05);
+      clicks.push(lbl());
+      x.G.f9cam = null;
+      while (F.auto) x.f9Tick(0.05);
+      return { seen: [...seen], atCatch, ended: !x.G.f9cam, clicks, live };
+    });
+    ok(
+      rot.live &&
+        rot.clicks.join('|') ===
+          'Camera: Director|Camera: Cruise ship|Camera: Cockpit (cockpit view)|Camera: Director|Camera: race|Camera: Director',
+      'during the show the button switches camera on each click and holds it',
+      rot.clicks.join(' > '),
+    );
+    ok(
+      ['director', 'ship', 'cockpit'].every((m) => rot.seen.includes(m)) && rot.atCatch === 0 && rot.ended,
+      'the launch camera rotates director, cruise ship, cockpit; the catch is on the director',
+      rot.seen.join(', '),
+    );
+    // SI races with the pad loaded and a flight under way, and never touches the tower or the vehicles
+    const lap = await page.evaluate(() => {
+      const x = __x1;
+      x.G.paused = true;
+      x.reset('demo');
+      x.f9Launch();
+      let laps = 0,
+        prev = null;
+      for (let i = 0; i < 200 * 200; i++) {
+        x.simStep();
+        if (i % 10 === 0) x.f9Tick(0.05);
+        const e = x.G.s.p[1];
+        if (prev !== null && prev < 0 && e >= 0) laps++;
+        prev = e;
+        if (x.G.s.crash) return { crash: x.G.s.crash, laps };
+      }
+      return { laps };
+    });
+    ok(
+      !lap.crash && lap.laps >= 3,
+      'SI flies three laps past the Starship pad without a hit',
+      lap.crash || lap.laps + ' line crossings',
+    );
+    await H.shot(page, 'starship_pad');
+    ok(errors.length === 0, 'no page errors', errors.join(' | ') || undefined);
+    await ctx.close();
+  },
+  // no shader is built mid-flight: every material is compiled when the launch site loads, and the engine lights are
+  // never hidden (hiding a light rebuilds every material's shader: a stall of up to a second or more on a phone)
+  // the launch cloud stays within its smoke budget: no more than about 8 layers of puffs over the screen (it was 50)
+  async smoke(b) {
+    const { page, errors, ctx } = await H.open(b, SSP);
+    await H.startSI(page);
+    await page.waitForFunction('__x1.F9.ready', null, { timeout: 120000 });
+    const r = await page.evaluate(() => {
+      const x = __x1,
+        F = x.F9,
+        ST = F.dbg.ST,
+        out = [];
+      x.f9Count();
+      x.G.f9cam.man = true;
+      x.G.f9cam.ri = 0;
+      let n = 0;
+      for (const t of [3, 5, 8]) {
+        while (ST.t < t && n++ < 4000) {
+          F.dbg.f9Cam(1 / 30);
+          x.f9Tick(1 / 30);
+        }
+        out.push([t, +ST.sm.layers.toFixed(1), +ST.sm.keep.toFixed(2), +ST.sm.drawn.toFixed(1), ST.sm.p.length]);
+      }
+      x.f9CamEnd();
+      while (F.auto) x.f9Tick(0.1);
+      return out;
+    });
+    const drawn = r.map((e) => e[3]); // cover actually drawn, estimated
+    ok(
+      Math.max(...drawn) < 11,
+      'launch smoke stays within its budget (layers of puffs over the screen)',
+      JSON.stringify(r),
+    );
+    ok(errors.length === 0, 'no page errors', errors.join(' | ') || undefined);
+    await ctx.close();
+  },
+  async shaders(b) {
+    for (const [f, nm] of [
+      [F9, 'Falcon 9'],
+      [SSP, 'Starship'],
+    ]) {
+      // a browser of its own: a whole launch rendered in the software GPU leaves it too busy for the next page
+      const ob = await H.launch(),
+        { page, errors, ctx } = await H.open(ob, f);
+      await H.startSI(page);
+      await page.waitForFunction('__x1.F9.ready', null, { timeout: 120000 });
+      await page.waitForTimeout(1500);
+      const r = await page.evaluate(() => {
+        const x = __x1,
+          R = x.renderer,
+          F = x.F9;
+        R.setAnimationLoop(null);
+        const p0 = R.info.programs.length;
+        x.f9Count();
+        let n = 0;
+        while (n++ < 6000 && (F.cd != null || F.tau >= 0 || F.auto)) {
+          x.f9Tick(0.05);
+          if (n % 20 === 0) {
+            R.render(x.scene, x.cam);
+            R.getContext().finish(); // let the software GPU keep up, or the next page waits on its queue
+          }
+        }
+        x.f9CamEnd();
+        return { p0, p1: R.info.programs.length, steps: n };
+      });
+      ok(r.p1 === r.p0, nm + ': no shader built during a whole launch', r.p0 + ' -> ' + r.p1 + ' programs');
+      ok(errors.length === 0, nm + ': no page errors', errors.join(' | ') || undefined);
+      await ctx.close();
+      await ob.close();
+    }
   },
 };
 

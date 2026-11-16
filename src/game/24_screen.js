@@ -38,6 +38,8 @@ function screenFeed(dt, pos, hdg) {
   // in view? (in VR the headset's pose is not the page camera, so there only the distance counts)
   let vis = false;
   const xr = XR();
+  // in the headset its extra draw of the scene is only worth it from the pool deck, where you watch it
+  if (xr && G.view !== 5) return;
   if (!xr) {
     SCR.m.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse);
     SCR.fr.setFromProjectionMatrix(SCR.m);

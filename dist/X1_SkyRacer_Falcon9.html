@@ -1626,7 +1626,7 @@ const spireR = (h) => {
 const $ = (id) => document.getElementById(id);
 const F9_ON =
   'true' ===
-  'true'; /* set by tools/build.py: true in the Falcon 9 page, false in the Grand Prix page. The launch pad, countdown and Starlink train only exist when it is true */
+  'true'; /* set by tools/build.py: true in the Falcon 9 and Starship pages, false in the Grand Prix page. The launch pad, countdown and Starlink train only exist when it is true */
 document.body.classList.toggle('f9', F9_ON);
 const gShip = (n, e) => (typeof shipGround === 'function' && G.s ? shipGround(e, n, -G.s.p[2]) : null);
 const env = {
@@ -1713,12 +1713,21 @@ const water = new THREE.Mesh(
   new THREE.PlaneGeometry(26000, 26000, 1, 1).rotateX(-Math.PI / 2),
   new THREE.ShaderMaterial({
     uniforms: waterU,
+    extensions: { derivatives: true }, // fwidth() for the pixel footprint (built into WebGL 2)
     vertexShader: `varying vec3 w;void main(){vec4 p=modelMatrix*vec4(position,1.);w=p.xyz;gl_Position=projectionMatrix*viewMatrix*p;}`,
     fragmentShader: `varying vec3 w;uniform float t,wash,tw;uniform vec3 sun,cam,craft;
- float h(vec2 p){return fract(sin(dot(p,vec2(41.3,289.1)))*43758.5453);}
+ // a hash without sin(): sin of large world coordinates loses precision in 32-bit floats, so the old one gave a new
+ // random value for a shift of millimetres, and the water sparkled whenever the camera moved
+ float h(vec2 p){vec3 p3=fract(vec3(p.xyx)*.1031);p3+=dot(p3,p3.yzx+33.33);return fract((p3.x+p3.y)*p3.z);}
  float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y);}
- float H(vec2 p){return n(p*.11+t*.09)*1.+n(p*.27-t*.13)*.55+n(p*.73+t*.25)*.28+n(p*1.9-t*.42)*.13;}
- void main(){vec3 v=cam-w;float dist=length(v);v/=dist;float e=mix(.28,5.,smoothstep(40.,1500.,dist));vec2 q=w.xz;
+ // the ripple octaves, each faded out where a pixel covers more than about a third of its wavelength (from high up,
+ // or far away), so no octave is finer than the pixels showing it: that is what flickered from the tower
+ vec4 ow;
+ float H(vec2 p){return n(p*.11+t*.09)*ow.x+n(p*.27-t*.13)*.55*ow.y+n(p*.73+t*.25)*.28*ow.z+n(p*1.9-t*.42)*.13*ow.w;}
+ void main(){vec3 v=cam-w;float dist=length(v);v/=dist;vec2 q=w.xz;
+ vec2 fw=fwidth(q);float fp=max(fw.x,fw.y);
+ ow=vec4(1.)-smoothstep(vec4(.3),vec4(.75),fp*vec4(.11,.27,.73,1.9));
+ float e=max(mix(.28,5.,smoothstep(40.,1500.,dist)),fp*1.5);
  float d0=H(q),dx=H(q+vec2(e,0))-d0,dz=H(q+vec2(0,e))-d0;float amp=mix(.9,.1,smoothstep(60.,1100.,dist));
  vec3 N=normalize(vec3(-dx/e*amp,1.,-dz/e*amp));
  float dc=length(q-craft.xz);float ring=wash*exp(-pow((dc-13.)/9.,2.));N.xz+=normalize(q-craft.xz+.001)*ring*.12*sin(dc*1.6-t*11.);N=normalize(N);
@@ -2723,7 +2732,7 @@ function emit(x, y, z, vx, vy, vz) {
 }
 
 /* ---------- game state ---------- */
-const BUILD = '2026-11-13 11:05';
+const BUILD = '2026-11-15 19:04';
 const STORE = 'x1-skyracer-laps-v1';
 const VRB = { a: '', b: '', c: '#fff', until: 0, dirty: false };
 const G = {
@@ -4329,15 +4338,23 @@ function render(dt, now) {
   const hdg =
     Math.hypot(s.v[0], s.v[1]) > 6 ? ned([s.v[0], s.v[1], 0]).normalize() : new THREE.Vector3(F.x, 0, F.z).normalize();
   const intro = G.intro && !XR();
-  let V = intro ? (SHOTS[INTRO.i].fly && CLIP.ready ? 1 : 0) : G.view; // the race clip in the opening is a cockpit shot
+  // the race clip in the opening is a cockpit shot; a launch camera can hand a turn to one of the race views (cockpit)
+  let V = intro
+    ? SHOTS[INTRO.i].fly && CLIP.ready
+      ? 1
+      : 0
+    : G.f9cam && G.f9cam.view != null && !XR()
+      ? G.f9cam.view
+      : G.view;
   if (V === 4 && !XR()) {
     V = TV.shot(dt, pos, hdg);
   }
   camVis(V === 4 ? 0 : V);
   const k = 1 - Math.exp(-dt * (V === 2 ? 2.2 : 4.2));
   if (intro) introCam(dt, pos, hdg);
-  else if (G.f9cam && !XR()) f9Cam(dt);
-  else if (XR()) {
+  else if (G.f9cam && !XR() && f9Cam(dt)) {
+    // the launch camera drove this frame (false: it handed this turn to race view V)
+  } else if (XR()) {
     vrCam(pos, hdg, F, k);
     vrPointer();
   } else if (vMark.visible) {
@@ -4357,7 +4374,24 @@ function render(dt, now) {
     const e = EYE.clone().add(inner.position);
     cam.position.copy(e.applyMatrix4(craft.matrixWorld));
     cam.up.copy(Dn).negate();
-    cam.lookAt(cam.position.clone().add(F).sub(Dn.clone().multiplyScalar(-0.02)));
+    const lk = G.f9cam && G.f9cam.view === 1 && G.f9cam.look;
+    if (lk) {
+      // a launch camera's turn in the cockpit: the driver turns their head toward the rocket, as far as a head turns
+      // (80 degrees either way, 55 up, 30 down), and follows it smoothly
+      const d = lk.clone().sub(cam.position).normalize(),
+        U = Dn.clone().negate(),
+        C = G.f9cam,
+        yw = clamp(Math.atan2(d.dot(R), d.dot(F)), -80 * D2R, 80 * D2R),
+        pt = clamp(Math.asin(clamp(d.dot(U), -1, 1)), -30 * D2R, 55 * D2R),
+        kh = 1 - Math.exp(-dt * 2.5);
+      C.hy = lerp(C.hy == null ? 0 : C.hy, yw, kh); // from straight ahead, turning
+      C.hp = lerp(C.hp == null ? 0 : C.hp, pt, kh);
+      const dir = F.clone()
+        .multiplyScalar(Math.cos(C.hp) * Math.cos(C.hy))
+        .addScaledVector(R, Math.cos(C.hp) * Math.sin(C.hy))
+        .addScaledVector(U, Math.sin(C.hp));
+      cam.lookAt(cam.position.clone().add(dir));
+    } else cam.lookAt(cam.position.clone().add(F).sub(Dn.clone().multiplyScalar(-0.02)));
     cam.fov = lerp(cam.fov, 74, 0.1);
   } else {
     rig.position.set(0, 0, 0);
@@ -5179,20 +5213,9 @@ function tvLOS(a, b) {
   return true;
 }
 function tvTag() {
-  const s = G.s,
-    p = proj(ned(s.p));
+  // the TV view is a clean broadcast picture: only the camera label in the corner, nothing over the car
   g2.shadowColor = 'rgba(0,0,0,.6)';
   g2.shadowBlur = 5;
-  if (G.camV !== 1 && !p.behind) {
-    g2.font = '700 15px "Barlow Condensed",sans-serif';
-    g2.textAlign = 'center';
-    g2.fillStyle = '#fff';
-    g2.fillText(
-      'X1 SKYRACER  ·  SI  ·  ' + Math.round(s.V * 2.23694) + ' MPH',
-      p.x,
-      p.y - clamp(9000 / Math.max(cam.position.distanceTo(ned(s.p)), 1) / cam.fov, 26, 140),
-    );
-  }
   g2.textAlign = 'left';
   g2.font = '700 14px "Barlow Condensed",sans-serif';
   g2.fillStyle = '#e8690f';
@@ -5441,10 +5464,16 @@ function vBar(c, x, y, w, lab, f, col, val) {
   c.textAlign = 'right';
   c.fillText(val, x + w, y + 10);
 }
+/* In the headset every texture upload costs frame time, and a missed frame shows as judder the moment you turn your head:
+   the glass is redrawn about 12 times a second, and only while it is shown. */
+const VPT = { t: 0 };
 function vrPanel() {
+  const now = performance.now();
+  vrBanner(now);
+  if (!vPanel.visible || now - VPT.t < 80) return;
+  VPT.t = now;
   const s = G.s,
-    c = vg,
-    now = performance.now();
+    c = vg;
   c.clearRect(0, 0, VW, VH);
   rr(c, 4, 4, VW - 8, VH - 8, 26);
   c.fillStyle = 'rgba(8,12,18,.66)';
@@ -5571,7 +5600,9 @@ function vrPanel() {
   );
   vBar(c, 524, 354, 470, 'LOAD', s.nz / 3, '#ffc53d', s.nz.toFixed(1) + ' g');
   vTex.needsUpdate = true;
-  // event banner (lap times, penalties)
+}
+// event banner (lap times, penalties): drawn only when it changes
+function vrBanner(now) {
   const on = now < VRB.until;
   vBan.visible = on;
   if (on && VRB.dirty) {
@@ -5596,9 +5627,9 @@ function vrPanel() {
 }
 
 /* VR ship view. Auto: the deck spot changes for the best view and you turn to follow the SkyRacer, like the screen view.
-   Manual: you stay put facing outboard; A moves you to the deck spot nearest the SkyRacer. Zoom (right stick) moves your
+   Manual: you stay put facing outboard (with a launch pad on the shore, switching to manual puts you on the deck spot nearest it, facing it); A moves you to the deck spot nearest the SkyRacer. Zoom (right stick) moves your
    eye along the line toward the SkyRacer, like binoculars, never closer than 25 m. */
-const VRS = { auto: true, k: null, zoom: 1, zt: 1, range: false, yaw: null };
+const VRS = { auto: true, k: null, zoom: 1, zt: 1, range: false, yaw: null, look: null };
 function vrNearest() {
   const t = ned(G.s.p);
   let best = null;
@@ -5611,6 +5642,7 @@ function vrNearest() {
   VRS.auto = false;
   VRS.k = best.c.k;
   VRS.yaw = null;
+  VRS.look = null;
   banner(
     'SHIP ' + (best.c.ship + 1) + (best.c.side ? ' PORT' : ' STARBOARD') + (best.c.fwd ? ' FWD' : ' AFT'),
     'Manual. Auto is in the menu (Y).',
@@ -5620,11 +5652,22 @@ function vrNearest() {
 function vrAutoT() {
   VRS.auto = !VRS.auto;
   VRS.yaw = null;
-  if (!VRS.auto && VRS.k == null) VRS.k = (DECK.cur || deckCands()[0]).k;
+  VRS.look = null;
+  if (!VRS.auto) {
+    // manual: with a launch pad on the shore, start on the deck spot nearest it, facing it, to watch the launches
+    if (F9_ON && F9.ready) {
+      let best = null;
+      for (const c of deckCands()) if (!best || c.p.distanceTo(F9.base) < best.p.distanceTo(F9.base)) best = c;
+      VRS.k = best.k;
+      VRS.look = F9.base.clone();
+    } else if (VRS.k == null) VRS.k = (DECK.cur || deckCands()[0]).k;
+  }
   banner(
     VRS.auto ? 'AUTO VIEW' : 'MANUAL VIEW',
-    VRS.auto ? 'Follows the SkyRacer' : 'A moves you to the nearest deck',
-    1300,
+    VRS.auto
+      ? 'Follows the SkyRacer'
+      : (VRS.look ? 'Facing the ' + LV.name + ' pad. ' : '') + 'A moves you to the deck nearest the SkyRacer',
+    1600,
   );
 }
 const VIEWN = ['CHASE', 'COCKPIT', 'BIRD', 'SHIP', 'TV', 'POOL DECK'];
@@ -5640,7 +5683,9 @@ function vrDeck(pos, k) {
     L = to.length(),
     go = Math.min(L * (1 - 1 / VRS.zoom), Math.max(0, L - 25));
   rig.position.copy(c.p).addScaledVector(to, go / Math.max(L, 1));
-  const want = VRS.auto ? Math.atan2(-to.x, -to.z) : Math.atan2(-c.n.x, -c.n.z);
+  // auto: toward the SkyRacer; manual: outboard, or toward the launch pad when that is what put you here
+  const lk = !VRS.auto && VRS.look ? VRS.look.clone().sub(rig.position) : null,
+    want = VRS.auto ? Math.atan2(-to.x, -to.z) : lk ? Math.atan2(-lk.x, -lk.z) : Math.atan2(-c.n.x, -c.n.z);
   if (VRS.yaw == null) VRS.yaw = want;
   else {
     let d = want - VRS.yaw;
@@ -5822,8 +5867,16 @@ function vrInput() {
   ed(R, 'R', 1, handover);
   if (!(F9_ON && (G.view === 3 || G.view === 5) && G.mode === 'demo')) ed(L, 'L', 4, toggleAlt);
   ed(L, 'L', 5, () => vmT(true));
+  vrMenuKey(L, ed, true);
   ed(L, 'L', 1, land);
   ed(L, 'L', 3, toggleFold);
+}
+/* The menu button (three lines) on the left controller opens and closes the menu too. Browsers that pass it to the page
+   put it after the standard buttons (trigger, grip, -, stick, X, Y, thumbrest), so any button past those counts; a browser
+   that keeps it for itself (it may open its own menu) never sends it, and Y still works. */
+function vrMenuKey(L, ed, open) {
+  if (!L) return;
+  for (let i = 7; i < L.buttons.length; i++) ed(L, 'L', i, () => vmT(open));
 }
 async function enterVR() {
   const b = $('bVR');
@@ -7235,7 +7288,7 @@ const SHOTS = [
   {
     T: 7,
     f9: 2,
-    cap: () => ['FALCON 9', 'Clearing the tower'],
+    cap: () => [LV.name.toUpperCase(), 'Clearing the tower'],
     f(u, cm) {
       const b = F9.base,
         d = F9.dirS,
@@ -7272,7 +7325,7 @@ const f9Mid = (out) => {
   return F9.piv.localToWorld(out.set(0, F9M.eng + F9M.top * 0.45, 0));
 };
 const skipShot = (sh) =>
-  (sh.ship && !haveShips()) || (sh.f9 === 1 && !F9.ready) || (sh.f9 === 2 && !(F9.ready && F9.tau >= 0));
+  (sh.ship && !haveShips()) || (sh.f9 === 1 && !f9IntroOK()) || (sh.f9 === 2 && !(F9.ready && F9.tau >= 0));
 function introCam(dt, pos, hdg) {
   let sh = SHOTS[INTRO.i];
   if (skipShot(sh)) {
@@ -7445,6 +7498,8 @@ function screenFeed(dt, pos, hdg) {
   // in view? (in VR the headset's pose is not the page camera, so there only the distance counts)
   let vis = false;
   const xr = XR();
+  // in the headset its extra draw of the scene is only worth it from the pool deck, where you watch it
+  if (xr && G.view !== 5) return;
   if (!xr) {
     SCR.m.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse);
     SCR.fr.setFromProjectionMatrix(SCR.m);
@@ -7494,9 +7549,10 @@ function screenFeed(dt, pos, hdg) {
 }
 
 /* ---------- VR menu ----------
-   Y on the left controller opens it: a panel about a metre in front of you, where you are looking when you open it. Point
-   with the right controller (a laser shows where), trigger or A to select, B or Y to close. While it is open the sticks
-   and triggers do nothing, and when you are flying the sim holds still (SI keeps flying when you are only watching). */
+   Y or the menu button (three lines) on the left controller opens it: a panel just below the HUD, tilted up toward you like a dash display. Point with the right
+   controller (a laser shows where), trigger or A to select, B or Y to close; Exit VR is at the bottom. While it is open
+   the sticks and triggers do nothing, and when you are flying the sim holds still (SI keeps flying when you are only
+   watching). */
 const VM = {
   open: false,
   hover: -1,
@@ -7517,9 +7573,13 @@ const vmg = mc.getContext('2d'),
   mTex = new THREE.CanvasTexture(mc);
 mTex.encoding = THREE.sRGBEncoding;
 mTex.anisotropy = 8;
-const vMenu = new THREE.Mesh(new THREE.PlaneGeometry(1.0, (1.0 * MH) / MW), vMat(mTex));
+const VMW = 0.9; // metres wide
+const vMenu = new THREE.Mesh(new THREE.PlaneGeometry(VMW, (VMW * MH) / MW), vMat(mTex));
 vMenu.renderOrder = 1004;
 vMenu.visible = false;
+// just below the HUD glass, tilted further up toward the eyes
+vMenu.position.set(0, -0.88, -0.78);
+vMenu.rotation.x = -0.75;
 rig.add(vMenu);
 // right-hand laser and the dot where it lands
 const vCtl = renderer.xr.getController(0),
@@ -7628,7 +7688,7 @@ const VMB = () => {
     const it = F9_ON
       ? [
           {
-            l: F9.cd != null ? 'Countdown T-' + Math.ceil(F9.cd) : 'Launch Falcon 9',
+            l: F9.cd != null ? 'Countdown T-' + Math.ceil(F9.cd) : 'Launch ' + LV.name,
             on: () => F9.cd != null,
             ok: () => F9.ready && demo && f9CountOK(),
             a: () => {
@@ -7655,6 +7715,7 @@ const VMB = () => {
     { l: 'Resume', pri: 1, a: () => vmT(false) },
     {
       l: 'Exit VR',
+      ex: 1,
       a: () => {
         vmT(false);
         const s = renderer.xr.getSession();
@@ -7696,24 +7757,28 @@ function vmDraw() {
       on = ok && b.on && b.on(),
       hv = i === VM.hover && ok;
     rr(c, b.x, b.y, b.w, b.h, 12);
-    c.fillStyle = b.pri
+    c.fillStyle = b.ex
       ? hv
-        ? '#ff8a3d'
-        : '#e8690f'
-      : on
+        ? '#ff5a4f'
+        : '#c8372d'
+      : b.pri
         ? hv
-          ? '#ffffff'
-          : '#e9e6e0'
-        : hv
-          ? 'rgba(255,255,255,.28)'
-          : 'rgba(255,255,255,.1)';
+          ? '#ff8a3d'
+          : '#e8690f'
+        : on
+          ? hv
+            ? '#ffffff'
+            : '#e9e6e0'
+          : hv
+            ? 'rgba(255,255,255,.28)'
+            : 'rgba(255,255,255,.1)';
     c.fill();
     if (hv) {
       c.strokeStyle = '#e8690f';
       c.lineWidth = 4;
       c.stroke();
     }
-    c.fillStyle = !ok ? 'rgba(255,255,255,.28)' : b.pri ? '#10141a' : on ? '#10141a' : '#f4f1ec';
+    c.fillStyle = !ok ? 'rgba(255,255,255,.28)' : b.ex ? '#ffffff' : b.pri ? '#10141a' : on ? '#10141a' : '#f4f1ec';
     let fs = b.h > 66 ? 34 : 28;
     c.font = '700 ' + fs + 'px "Barlow Condensed",sans-serif';
     while (fs > 16 && c.measureText(b.l.toUpperCase()).width > b.w - 20) {
@@ -7726,7 +7791,11 @@ function vmDraw() {
   c.textAlign = 'left';
   c.font = '500 21px "Barlow Condensed",sans-serif';
   c.fillStyle = '#aab0b8';
-  c.fillText('LEFT   stick yaw / climb · trigger boost · grip land · X alt hold · Y menu · click fold', 40, MH - 50);
+  c.fillText(
+    'LEFT   stick yaw / climb · trigger boost · grip land · X alt hold · Y or menu button · click fold',
+    40,
+    MH - 50,
+  );
   c.fillText(
     'RIGHT  stick bank / speed · trigger boost · grip hand over · A take off · B next view · click path',
     40,
@@ -7742,22 +7811,7 @@ function vmT(on) {
   vLaser.visible = false;
   VM.hover = -1;
   if (on) {
-    // in front of the head, level, a little below the eyes
-    const xc = renderer.xr.getCamera(),
-      p = new THREE.Vector3(),
-      q = new THREE.Quaternion(),
-      sc = new THREE.Vector3();
-    xc.matrix.decompose(p, q, sc);
-    const f = new THREE.Vector3(0, 0, -1).applyQuaternion(q);
-    f.y = 0;
-    if (f.lengthSq() < 1e-4) f.set(0, 0, -1);
-    f.normalize();
-    vMenu.position.copy(p).addScaledVector(f, 1.05);
-    vMenu.position.y -= 0.12;
-    // face the eye (rig-local; Object3D.lookAt would work in world space): +z of the panel points back at the head
-    vMenu.quaternion.setFromRotationMatrix(
-      new THREE.Matrix4().lookAt(p.clone().setY(p.y - 0.12), vMenu.position, new THREE.Vector3(0, 1, 0)),
-    );
+    // it stays where it lives, just below the HUD glass
     inp.roll = inp.pitch = inp.yaw = inp.climb = inp.boost = 0;
     if (G.mode !== 'demo' && !G.paused) {
       G.paused = true;
@@ -7789,7 +7843,7 @@ function vmInput(L, R, bt, ed) {
       const x = h.uv.x * MW,
         y = (1 - h.uv.y) * MH;
       vDot.visible = true;
-      vDot.position.set((h.uv.x - 0.5) * 1.0, ((h.uv.y - 0.5) * 1.0 * MH) / MW, 0.002);
+      vDot.position.set((h.uv.x - 0.5) * VMW, ((h.uv.y - 0.5) * VMW * MH) / MW, 0.002);
       hit = VM.btn.findIndex((b) => x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h);
     } else vDot.visible = false;
   }
@@ -7808,6 +7862,7 @@ function vmInput(L, R, bt, ed) {
   ed(R, 'R', 4, pick);
   ed(R, 'R', 5, () => vmT(false));
   ed(L, 'L', 5, () => vmT(false));
+  vrMenuKey(L, ed, false);
   const now = performance.now();
   if (VM.dirty || now - VM.t > 300) {
     VM.t = now;
@@ -7822,6 +7877,8 @@ function vmInput(L, R, bt, ed) {
    It stands on the shore between turn 1 and turn 2, at the water's edge, with the rocket end of the pad and the rocket's
    lettered side turned toward the cruise ships. In the opening sequence it launches straight after the course flyover:
    ignition as the shot opens, liftoff about a second later, then the climb from the water, from the ship, and from afar. */
+const LV = { name: 'Falcon 9', short: 'F9', btn: 'Launch F9' };
+const f9IntroOK = () => F9.ready; // the opening sequence's launch shot
 const F9 = {
   ready: false,
   started: false,
@@ -7976,6 +8033,14 @@ async function f9Load() {
   f9Fx();
   f9Flags(sc);
   F9.ready = true;
+  // prepare every material now (engine light in place), not the first time each comes into view: no stall then
+  try {
+    const t0 = performance.now();
+    renderer.compile(scene, cam);
+    F9.compileMs = performance.now() - t0;
+  } catch (e) {
+    console.warn('precompile', e);
+  }
   console.log('Falcon 9 on its pad at', cx.toFixed(0), cy.toFixed(0));
 }
 /* ---------- collision with the pad and tower ----------
@@ -8201,7 +8266,8 @@ function f9Count() {
   }
   F9.cd = 10;
   F9.cdLast = null;
-  if (!XR() && !G.intro) {
+  if (!XR() && !G.intro && G.mode === 'demo') {
+    // the launch camera only while watching SI; flying, you keep your own view
     G.f9cam = { was: G.view };
   }
 }
@@ -8237,6 +8303,7 @@ function f9Cam(dt) {
   cam.up.set(0, 1, 0);
   sh[i].f(u, cam);
   if (F9.cd == null && (F9.tau < 0 || F9.tau > 21)) f9CamEnd();
+  return true;
 }
 function f9CamEnd() {
   if (!G.f9cam) return;
@@ -8367,7 +8434,7 @@ function f9Tick(dt) {
   f9CountTick(dt);
   f9ArmTick(dt);
   {
-    const show = G.mode === 'demo' && !G.intro && !XR(),
+    const show = G.mode === 'demo' && !G.intro && !XR(), // in the menu only while watching SI
       b = $('bLaunch');
     if (b.hidden === show) b.hidden = !show;
     const ok = f9CountOK();
@@ -8620,6 +8687,9 @@ function starlinkTick(dt, eye) {
    less often when the frame rate sags (PERF.k). The side-stick follows the
    right stick. */
 const DASH = {
+  hp: new THREE.Vector3(), // headset: head position, facing, and the way to the screen
+  hf: new THREE.Vector3(),
+  ht: new THREE.Vector3(),
   scr: null,
   stick: null,
   rt: null,
@@ -8859,7 +8929,7 @@ function dashMapBase() {
     g.stroke();
     g.fillStyle = '#fff';
     g.font = 'bold 9px system-ui,sans-serif';
-    g.fillText('F9', X + 12, Y + 2);
+    g.fillText(LV.short, X + 12, Y + 2);
   }
   return c;
 }
@@ -8973,11 +9043,25 @@ function dashTick(dt, pos, hdg) {
   }
   DASH.acc += dt;
   DASH.macc += dt;
-  if (DASH.acc < 0.05 * PERF.k) return;
+  if (DASH.acc < (XR() ? 0.1 : 0.05) * PERF.k) return;
   DASH.acc = 0;
   // seen from the seat, or from outside only close up and in frame (through the canopy)
   const sw = DASH.scr.getWorldPosition(DASH.c);
-  if (G.camV !== 1 || G.f9cam) {
+  if (XR()) {
+    /* In the headset the nose camera's extra draw of the scene is a frame-time spike, and a missed frame shows as judder
+       while the head turns: it is drawn only while you are looking at the dash (within 45 degrees) and not turning
+       your head quickly (under about 40 degrees a second). */
+    const xc = renderer.xr.getCamera();
+    xc.updateMatrixWorld(true);
+    const hp = DASH.hp.setFromMatrixPosition(xc.matrixWorld),
+      fw = DASH.hf.set(0, 0, -1).transformDirection(xc.matrixWorld),
+      to = DASH.ht.copy(sw).sub(hp).normalize(),
+      turn = DASH.hq0 ? fw.angleTo(DASH.hq0) / Math.max(DASH.hdt, 1e-3) : 0;
+    DASH.hq0 = (DASH.hq0 || new THREE.Vector3()).copy(fw);
+    DASH.hdt = 0.1 * PERF.k;
+    if (fw.dot(to) < Math.cos(45 * D2R) || turn > 40 * D2R) return;
+  }
+  if (G.camV !== 1 || (G.f9cam && G.f9cam.view !== 1)) {
     // G.camV: the cockpit view, or the opening's cockpit race clip
     if (XR() ? rig.position.distanceTo(sw) > 8 : cam.position.distanceTo(sw) > 8) return;
     if (!XR()) {
@@ -9567,6 +9651,13 @@ reset('demo');
 resize();
 window.__x1 = {
   banner,
+  vPanel,
+  vMenu,
+  vmDraw,
+  vrPanel,
+  VRS,
+  vrAutoT,
+  rig,
   CLIP,
   SP,
   f9Unload,

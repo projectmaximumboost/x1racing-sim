@@ -85,15 +85,23 @@ function render(dt, now) {
   const hdg =
     Math.hypot(s.v[0], s.v[1]) > 6 ? ned([s.v[0], s.v[1], 0]).normalize() : new THREE.Vector3(F.x, 0, F.z).normalize();
   const intro = G.intro && !XR();
-  let V = intro ? (SHOTS[INTRO.i].fly && CLIP.ready ? 1 : 0) : G.view; // the race clip in the opening is a cockpit shot
+  // the race clip in the opening is a cockpit shot; a launch camera can hand a turn to one of the race views (cockpit)
+  let V = intro
+    ? SHOTS[INTRO.i].fly && CLIP.ready
+      ? 1
+      : 0
+    : G.f9cam && G.f9cam.view != null && !XR()
+      ? G.f9cam.view
+      : G.view;
   if (V === 4 && !XR()) {
     V = TV.shot(dt, pos, hdg);
   }
   camVis(V === 4 ? 0 : V);
   const k = 1 - Math.exp(-dt * (V === 2 ? 2.2 : 4.2));
   if (intro) introCam(dt, pos, hdg);
-  else if (G.f9cam && !XR()) f9Cam(dt);
-  else if (XR()) {
+  else if (G.f9cam && !XR() && f9Cam(dt)) {
+    // the launch camera drove this frame (false: it handed this turn to race view V)
+  } else if (XR()) {
     vrCam(pos, hdg, F, k);
     vrPointer();
   } else if (vMark.visible) {
@@ -113,7 +121,24 @@ function render(dt, now) {
     const e = EYE.clone().add(inner.position);
     cam.position.copy(e.applyMatrix4(craft.matrixWorld));
     cam.up.copy(Dn).negate();
-    cam.lookAt(cam.position.clone().add(F).sub(Dn.clone().multiplyScalar(-0.02)));
+    const lk = G.f9cam && G.f9cam.view === 1 && G.f9cam.look;
+    if (lk) {
+      // a launch camera's turn in the cockpit: the driver turns their head toward the rocket, as far as a head turns
+      // (80 degrees either way, 55 up, 30 down), and follows it smoothly
+      const d = lk.clone().sub(cam.position).normalize(),
+        U = Dn.clone().negate(),
+        C = G.f9cam,
+        yw = clamp(Math.atan2(d.dot(R), d.dot(F)), -80 * D2R, 80 * D2R),
+        pt = clamp(Math.asin(clamp(d.dot(U), -1, 1)), -30 * D2R, 55 * D2R),
+        kh = 1 - Math.exp(-dt * 2.5);
+      C.hy = lerp(C.hy == null ? 0 : C.hy, yw, kh); // from straight ahead, turning
+      C.hp = lerp(C.hp == null ? 0 : C.hp, pt, kh);
+      const dir = F.clone()
+        .multiplyScalar(Math.cos(C.hp) * Math.cos(C.hy))
+        .addScaledVector(R, Math.cos(C.hp) * Math.sin(C.hy))
+        .addScaledVector(U, Math.sin(C.hp));
+      cam.lookAt(cam.position.clone().add(dir));
+    } else cam.lookAt(cam.position.clone().add(F).sub(Dn.clone().multiplyScalar(-0.02)));
     cam.fov = lerp(cam.fov, 74, 0.1);
   } else {
     rig.position.set(0, 0, 0);

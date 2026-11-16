@@ -96,10 +96,16 @@ function vBar(c, x, y, w, lab, f, col, val) {
   c.textAlign = 'right';
   c.fillText(val, x + w, y + 10);
 }
+/* In the headset every texture upload costs frame time, and a missed frame shows as judder the moment you turn your head:
+   the glass is redrawn about 12 times a second, and only while it is shown. */
+const VPT = { t: 0 };
 function vrPanel() {
+  const now = performance.now();
+  vrBanner(now);
+  if (!vPanel.visible || now - VPT.t < 80) return;
+  VPT.t = now;
   const s = G.s,
-    c = vg,
-    now = performance.now();
+    c = vg;
   c.clearRect(0, 0, VW, VH);
   rr(c, 4, 4, VW - 8, VH - 8, 26);
   c.fillStyle = 'rgba(8,12,18,.66)';
@@ -226,7 +232,9 @@ function vrPanel() {
   );
   vBar(c, 524, 354, 470, 'LOAD', s.nz / 3, '#ffc53d', s.nz.toFixed(1) + ' g');
   vTex.needsUpdate = true;
-  // event banner (lap times, penalties)
+}
+// event banner (lap times, penalties): drawn only when it changes
+function vrBanner(now) {
   const on = now < VRB.until;
   vBan.visible = on;
   if (on && VRB.dirty) {
@@ -251,9 +259,9 @@ function vrPanel() {
 }
 
 /* VR ship view. Auto: the deck spot changes for the best view and you turn to follow the SkyRacer, like the screen view.
-   Manual: you stay put facing outboard; A moves you to the deck spot nearest the SkyRacer. Zoom (right stick) moves your
+   Manual: you stay put facing outboard (with a launch pad on the shore, switching to manual puts you on the deck spot nearest it, facing it); A moves you to the deck spot nearest the SkyRacer. Zoom (right stick) moves your
    eye along the line toward the SkyRacer, like binoculars, never closer than 25 m. */
-const VRS = { auto: true, k: null, zoom: 1, zt: 1, range: false, yaw: null };
+const VRS = { auto: true, k: null, zoom: 1, zt: 1, range: false, yaw: null, look: null };
 function vrNearest() {
   const t = ned(G.s.p);
   let best = null;
@@ -266,6 +274,7 @@ function vrNearest() {
   VRS.auto = false;
   VRS.k = best.c.k;
   VRS.yaw = null;
+  VRS.look = null;
   banner(
     'SHIP ' + (best.c.ship + 1) + (best.c.side ? ' PORT' : ' STARBOARD') + (best.c.fwd ? ' FWD' : ' AFT'),
     'Manual. Auto is in the menu (Y).',
@@ -275,11 +284,22 @@ function vrNearest() {
 function vrAutoT() {
   VRS.auto = !VRS.auto;
   VRS.yaw = null;
-  if (!VRS.auto && VRS.k == null) VRS.k = (DECK.cur || deckCands()[0]).k;
+  VRS.look = null;
+  if (!VRS.auto) {
+    // manual: with a launch pad on the shore, start on the deck spot nearest it, facing it, to watch the launches
+    if (F9_ON && F9.ready) {
+      let best = null;
+      for (const c of deckCands()) if (!best || c.p.distanceTo(F9.base) < best.p.distanceTo(F9.base)) best = c;
+      VRS.k = best.k;
+      VRS.look = F9.base.clone();
+    } else if (VRS.k == null) VRS.k = (DECK.cur || deckCands()[0]).k;
+  }
   banner(
     VRS.auto ? 'AUTO VIEW' : 'MANUAL VIEW',
-    VRS.auto ? 'Follows the SkyRacer' : 'A moves you to the nearest deck',
-    1300,
+    VRS.auto
+      ? 'Follows the SkyRacer'
+      : (VRS.look ? 'Facing the ' + LV.name + ' pad. ' : '') + 'A moves you to the deck nearest the SkyRacer',
+    1600,
   );
 }
 const VIEWN = ['CHASE', 'COCKPIT', 'BIRD', 'SHIP', 'TV', 'POOL DECK'];
@@ -295,7 +315,9 @@ function vrDeck(pos, k) {
     L = to.length(),
     go = Math.min(L * (1 - 1 / VRS.zoom), Math.max(0, L - 25));
   rig.position.copy(c.p).addScaledVector(to, go / Math.max(L, 1));
-  const want = VRS.auto ? Math.atan2(-to.x, -to.z) : Math.atan2(-c.n.x, -c.n.z);
+  // auto: toward the SkyRacer; manual: outboard, or toward the launch pad when that is what put you here
+  const lk = !VRS.auto && VRS.look ? VRS.look.clone().sub(rig.position) : null,
+    want = VRS.auto ? Math.atan2(-to.x, -to.z) : lk ? Math.atan2(-lk.x, -lk.z) : Math.atan2(-c.n.x, -c.n.z);
   if (VRS.yaw == null) VRS.yaw = want;
   else {
     let d = want - VRS.yaw;
@@ -477,8 +499,16 @@ function vrInput() {
   ed(R, 'R', 1, handover);
   if (!(F9_ON && (G.view === 3 || G.view === 5) && G.mode === 'demo')) ed(L, 'L', 4, toggleAlt);
   ed(L, 'L', 5, () => vmT(true));
+  vrMenuKey(L, ed, true);
   ed(L, 'L', 1, land);
   ed(L, 'L', 3, toggleFold);
+}
+/* The menu button (three lines) on the left controller opens and closes the menu too. Browsers that pass it to the page
+   put it after the standard buttons (trigger, grip, -, stick, X, Y, thumbrest), so any button past those counts; a browser
+   that keeps it for itself (it may open its own menu) never sends it, and Y still works. */
+function vrMenuKey(L, ed, open) {
+  if (!L) return;
+  for (let i = 7; i < L.buttons.length; i++) ed(L, 'L', i, () => vmT(open));
 }
 async function enterVR() {
   const b = $('bVR');

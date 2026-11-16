@@ -5,6 +5,8 @@
    It stands on the shore between turn 1 and turn 2, at the water's edge, with the rocket end of the pad and the rocket's
    lettered side turned toward the cruise ships. In the opening sequence it launches straight after the course flyover:
    ignition as the shot opens, liftoff about a second later, then the climb from the water, from the ship, and from afar. */
+const LV = { name: 'Falcon 9', short: 'F9', btn: 'Launch F9' };
+const f9IntroOK = () => F9.ready; // the opening sequence's launch shot
 const F9 = {
   ready: false,
   started: false,
@@ -159,6 +161,14 @@ async function f9Load() {
   f9Fx();
   f9Flags(sc);
   F9.ready = true;
+  // prepare every material now (engine light in place), not the first time each comes into view: no stall then
+  try {
+    const t0 = performance.now();
+    renderer.compile(scene, cam);
+    F9.compileMs = performance.now() - t0;
+  } catch (e) {
+    console.warn('precompile', e);
+  }
   console.log('Falcon 9 on its pad at', cx.toFixed(0), cy.toFixed(0));
 }
 /* ---------- collision with the pad and tower ----------
@@ -384,7 +394,8 @@ function f9Count() {
   }
   F9.cd = 10;
   F9.cdLast = null;
-  if (!XR() && !G.intro) {
+  if (!XR() && !G.intro && G.mode === 'demo') {
+    // the launch camera only while watching SI; flying, you keep your own view
     G.f9cam = { was: G.view };
   }
 }
@@ -420,6 +431,7 @@ function f9Cam(dt) {
   cam.up.set(0, 1, 0);
   sh[i].f(u, cam);
   if (F9.cd == null && (F9.tau < 0 || F9.tau > 21)) f9CamEnd();
+  return true;
 }
 function f9CamEnd() {
   if (!G.f9cam) return;
@@ -550,7 +562,7 @@ function f9Tick(dt) {
   f9CountTick(dt);
   f9ArmTick(dt);
   {
-    const show = G.mode === 'demo' && !G.intro && !XR(),
+    const show = G.mode === 'demo' && !G.intro && !XR(), // in the menu only while watching SI
       b = $('bLaunch');
     if (b.hidden === show) b.hidden = !show;
     const ok = f9CountOK();

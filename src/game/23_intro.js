@@ -320,7 +320,7 @@ const SHOTS = [
   {
     T: 7,
     f9: 2,
-    cap: () => ['FALCON 9', 'Clearing the tower'],
+    cap: () => [LV.name.toUpperCase(), 'Clearing the tower'],
     f(u, cm) {
       const b = F9.base,
         d = F9.dirS,
@@ -357,7 +357,7 @@ const f9Mid = (out) => {
   return F9.piv.localToWorld(out.set(0, F9M.eng + F9M.top * 0.45, 0));
 };
 const skipShot = (sh) =>
-  (sh.ship && !haveShips()) || (sh.f9 === 1 && !F9.ready) || (sh.f9 === 2 && !(F9.ready && F9.tau >= 0));
+  (sh.ship && !haveShips()) || (sh.f9 === 1 && !f9IntroOK()) || (sh.f9 === 2 && !(F9.ready && F9.tau >= 0));
 function introCam(dt, pos, hdg) {
   let sh = SHOTS[INTRO.i];
   if (skipShot(sh)) {

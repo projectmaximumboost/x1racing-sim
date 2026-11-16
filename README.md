@@ -10,6 +10,8 @@ Open `dist/X1_SkyRacer_GrandPrix_standalone.html` in Chrome. It needs internet t
 
 `dist/X1_SkyRacer_Falcon9_standalone.html` is the same sim with a Falcon 9 on a launch pad beside the course: a launch in the opening sequence, a T-minus countdown (C, or the Launch F9 button, while the SI is flying) and a Starlink train in twilight. It loads `X1_SkyRacer_F9.glb` from the folder it is served from, so open it from a web server.
 
+`dist/X1_SkyRacer_Starship_standalone.html` puts the Starship launch tower on that shore instead: the tower, chopsticks, QD arm, Super Heavy and Starship from the Starship launch page (`src/starship/`, model `X1_SkyRacer_Starship.glb`, loaded from beside the page like the Falcon 9 one). The Starship button (or C) runs the whole show: the T-10 countdown and launch, the booster caught by its grid fins, lowered onto the mount, the chopsticks opening and climbing to the top of the tower, then Starship's belly-flop return, flip and catch at the top, lowered onto Super Heavy: stacked and ready to fly again. The launch camera uses the launch page's director shots and hands back your view at the end; any view change ends it early.
+
 ## Loading screen
 
 The sim opens on a black screen with the X1 Racing logo and a boost gauge reading BOOSTING. The needle follows the load, moving like a boost needle (a sprung needle with flutter), and never reaches full boost before 2.5 s however fast the load is. At full boost it holds 0.5 s, then the logo and gauge fly out past the camera while an iris opens on the opening sequence. The loader is a small script at the top of `src/shell.html`, so it shows before Three.js has downloaded; `tests/loader_needle.js` checks its timing with a fake clock.
@@ -18,7 +20,7 @@ The sim opens on a black screen with the X1 Racing logo and a boost gauge readin
 
     python3 tools/build.py
 
-One source tree builds both pages. They differ only in the `F9_ON` constant and the page title, which the build sets; everything Falcon 9 is behind `F9_ON`. Each page is one HTML file with the airframe model and logo embedded. The files without `_standalone` are for the published artifacts; they have no page wrapper because the host adds one.
+One source tree builds all three pages. They differ in the `F9_ON` constant, the page title and the launch-site module, which the build sets: `26_falcon9.js` for the Falcon 9 page, `src/starship/26_starship.js` (the Starship launch page's tower code) plus `src/game/26_starship.js` (its hooks) for the Starship page; both provide the same functions, so the rest of the sim is shared; everything launch-site is behind `F9_ON`. Each page is one HTML file with the airframe model and logo embedded. The files without `_standalone` are for the published artifacts; they have no page wrapper because the host adds one.
 
 The build stops with a message if the joined script does not parse (Node's syntax check, which also catches a `let` or `const` declared twice across files), if a top-level function is declared in two files, or if the `window.__x1` debug export names something that does not exist. The files in `src/game/` share one scope, so these are the mistakes that are easy to make.
 
@@ -29,14 +31,6 @@ The right stick does the flying. Sideways banks, and at speed the turn is coordi
 On a phone or tablet there is one stick under the right thumb and a Boost button under the left. Take off, Land and Back to pad are on screen and in the swipeable menu row.
 
 In the cockpit view the dash screen shows a camera under the nose, looking forward and down, beside a north-up map with your position and heading.
-
-## Cabin, TV and VR
-
-The airframe model has an open cockpit under the canopy: cabin liner, dash, centre console and a side-stick. Mass, the fans and the geometry outside the cockpit are unchanged from the earlier airframe. The source commit is in `airframe/SOURCE.md`.
-
-V, or the view buttons, steps through chase, cockpit and bird's eye. While the SI is flying there are two more: Ship, from a cruise-ship deck, and TV, a race broadcast. The TV view cuts between a camera by the next spire, a helicopter alongside, fly-bys from ahead, a slow orbit, the ship decks, and short cockpit and bird's-eye shots. A tap, click or key during the opening starts in the TV view. In a headset it starts in the chase view.
-
-VR is WebXR, for a Meta Quest. In the cockpit the headset sits at the design eye point and the HUD is a glass panel. Chase and bird's eye put you outside the aircraft, and Ship and the pool deck put you on a cruise ship. The VR button is on the menu bar. The hand controls are on the help screen (H).
 
 ## Liveries
 
@@ -64,7 +58,7 @@ The sim can drive a 2-DOF (pitch and roll) motion seat. Run `python3 tools/motio
 | --- | --- |
 | `src/physics.js` | Flight model, flight computer, course builder, SI pilot, autoland |
 | `src/course.js` | Spires, launch pad, shoreline, SI launch route |
-| `src/game/*.js` | The game, one file per part: scene, craft, input, race, cameras, ships, TV, VR, HUD, touch, leaderboard, intro, dash screen, Falcon 9, motion output. They are joined in file-name order into one script. |
+| `src/game/*.js` | The game, one file per part: scene, craft, input, race, cameras, ships, TV, VR, HUD, touch, leaderboard, intro, dash screen, Falcon 9 or Starship, motion output. They are joined in file-name order into one script. |
 | `src/shell.html` | Page layout and help screen |
 | `src/style.css` | Styles |
 | `docs/` | Leaderboard SQL and the Lovable setup prompt |

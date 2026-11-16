@@ -1,7 +1,8 @@
 /* ---------- VR menu ----------
-   Y on the left controller opens it: a panel about a metre in front of you, where you are looking when you open it. Point
-   with the right controller (a laser shows where), trigger or A to select, B or Y to close. While it is open the sticks
-   and triggers do nothing, and when you are flying the sim holds still (SI keeps flying when you are only watching). */
+   Y or the menu button (three lines) on the left controller opens it: a panel just below the HUD, tilted up toward you like a dash display. Point with the right
+   controller (a laser shows where), trigger or A to select, B or Y to close; Exit VR is at the bottom. While it is open
+   the sticks and triggers do nothing, and when you are flying the sim holds still (SI keeps flying when you are only
+   watching). */
 const VM = {
   open: false,
   hover: -1,
@@ -22,9 +23,13 @@ const vmg = mc.getContext('2d'),
   mTex = new THREE.CanvasTexture(mc);
 mTex.encoding = THREE.sRGBEncoding;
 mTex.anisotropy = 8;
-const vMenu = new THREE.Mesh(new THREE.PlaneGeometry(1.0, (1.0 * MH) / MW), vMat(mTex));
+const VMW = 0.9; // metres wide
+const vMenu = new THREE.Mesh(new THREE.PlaneGeometry(VMW, (VMW * MH) / MW), vMat(mTex));
 vMenu.renderOrder = 1004;
 vMenu.visible = false;
+// just below the HUD glass, tilted further up toward the eyes
+vMenu.position.set(0, -0.88, -0.78);
+vMenu.rotation.x = -0.75;
 rig.add(vMenu);
 // right-hand laser and the dot where it lands
 const vCtl = renderer.xr.getController(0),
@@ -133,7 +138,7 @@ const VMB = () => {
     const it = F9_ON
       ? [
           {
-            l: F9.cd != null ? 'Countdown T-' + Math.ceil(F9.cd) : 'Launch Falcon 9',
+            l: F9.cd != null ? 'Countdown T-' + Math.ceil(F9.cd) : 'Launch ' + LV.name,
             on: () => F9.cd != null,
             ok: () => F9.ready && demo && f9CountOK(),
             a: () => {
@@ -160,6 +165,7 @@ const VMB = () => {
     { l: 'Resume', pri: 1, a: () => vmT(false) },
     {
       l: 'Exit VR',
+      ex: 1,
       a: () => {
         vmT(false);
         const s = renderer.xr.getSession();
@@ -201,24 +207,28 @@ function vmDraw() {
       on = ok && b.on && b.on(),
       hv = i === VM.hover && ok;
     rr(c, b.x, b.y, b.w, b.h, 12);
-    c.fillStyle = b.pri
+    c.fillStyle = b.ex
       ? hv
-        ? '#ff8a3d'
-        : '#e8690f'
-      : on
+        ? '#ff5a4f'
+        : '#c8372d'
+      : b.pri
         ? hv
-          ? '#ffffff'
-          : '#e9e6e0'
-        : hv
-          ? 'rgba(255,255,255,.28)'
-          : 'rgba(255,255,255,.1)';
+          ? '#ff8a3d'
+          : '#e8690f'
+        : on
+          ? hv
+            ? '#ffffff'
+            : '#e9e6e0'
+          : hv
+            ? 'rgba(255,255,255,.28)'
+            : 'rgba(255,255,255,.1)';
     c.fill();
     if (hv) {
       c.strokeStyle = '#e8690f';
       c.lineWidth = 4;
       c.stroke();
     }
-    c.fillStyle = !ok ? 'rgba(255,255,255,.28)' : b.pri ? '#10141a' : on ? '#10141a' : '#f4f1ec';
+    c.fillStyle = !ok ? 'rgba(255,255,255,.28)' : b.ex ? '#ffffff' : b.pri ? '#10141a' : on ? '#10141a' : '#f4f1ec';
     let fs = b.h > 66 ? 34 : 28;
     c.font = '700 ' + fs + 'px "Barlow Condensed",sans-serif';
     while (fs > 16 && c.measureText(b.l.toUpperCase()).width > b.w - 20) {
@@ -231,7 +241,11 @@ function vmDraw() {
   c.textAlign = 'left';
   c.font = '500 21px "Barlow Condensed",sans-serif';
   c.fillStyle = '#aab0b8';
-  c.fillText('LEFT   stick yaw / climb · trigger boost · grip land · X alt hold · Y menu · click fold', 40, MH - 50);
+  c.fillText(
+    'LEFT   stick yaw / climb · trigger boost · grip land · X alt hold · Y or menu button · click fold',
+    40,
+    MH - 50,
+  );
   c.fillText(
     'RIGHT  stick bank / speed · trigger boost · grip hand over · A take off · B next view · click path',
     40,
@@ -247,22 +261,7 @@ function vmT(on) {
   vLaser.visible = false;
   VM.hover = -1;
   if (on) {
-    // in front of the head, level, a little below the eyes
-    const xc = renderer.xr.getCamera(),
-      p = new THREE.Vector3(),
-      q = new THREE.Quaternion(),
-      sc = new THREE.Vector3();
-    xc.matrix.decompose(p, q, sc);
-    const f = new THREE.Vector3(0, 0, -1).applyQuaternion(q);
-    f.y = 0;
-    if (f.lengthSq() < 1e-4) f.set(0, 0, -1);
-    f.normalize();
-    vMenu.position.copy(p).addScaledVector(f, 1.05);
-    vMenu.position.y -= 0.12;
-    // face the eye (rig-local; Object3D.lookAt would work in world space): +z of the panel points back at the head
-    vMenu.quaternion.setFromRotationMatrix(
-      new THREE.Matrix4().lookAt(p.clone().setY(p.y - 0.12), vMenu.position, new THREE.Vector3(0, 1, 0)),
-    );
+    // it stays where it lives, just below the HUD glass
     inp.roll = inp.pitch = inp.yaw = inp.climb = inp.boost = 0;
     if (G.mode !== 'demo' && !G.paused) {
       G.paused = true;
@@ -294,7 +293,7 @@ function vmInput(L, R, bt, ed) {
       const x = h.uv.x * MW,
         y = (1 - h.uv.y) * MH;
       vDot.visible = true;
-      vDot.position.set((h.uv.x - 0.5) * 1.0, ((h.uv.y - 0.5) * 1.0 * MH) / MW, 0.002);
+      vDot.position.set((h.uv.x - 0.5) * VMW, ((h.uv.y - 0.5) * VMW * MH) / MW, 0.002);
       hit = VM.btn.findIndex((b) => x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h);
     } else vDot.visible = false;
   }
@@ -313,6 +312,7 @@ function vmInput(L, R, bt, ed) {
   ed(R, 'R', 4, pick);
   ed(R, 'R', 5, () => vmT(false));
   ed(L, 'L', 5, () => vmT(false));
+  vrMenuKey(L, ed, false);
   const now = performance.now();
   if (VM.dirty || now - VM.t > 300) {
     VM.t = now;
