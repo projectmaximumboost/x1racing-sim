@@ -1,3 +1,7 @@
 node_modules/
 .DS_Store
 *.log
+# licensed ship asset: never commit
+dist/X1_SkyRacer_Ships.bin
+*.fbx
+tests/browser/out/

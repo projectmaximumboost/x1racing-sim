@@ -1,0 +1,47 @@
+<title>@@TITLE@@</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,500;0,600;0,700;1,700;1,800&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+@@CSS@@</style>
+<canvas id="view3d"></canvas>
+<div id="scrimT"></div><div id="scrimB"></div>
+<div class="hud" id="top">
+  <img id="logo" alt="X1 Racing" src="data:image/png;base64,@@LOGO@@">
+  <div id="title"><b>STARSHIP</b><span>X1 Racing launch tower</span></div>
+</div>
+<div class="hud" id="mc">
+  <div id="clock">T−00:10</div>
+  <div id="phase">STACKED</div>
+</div>
+<div class="hud" id="tele">
+  <div class="tr"><span class="lab">Super Heavy</span><b id="tB">0.0 km · 0 km/h</b></div>
+  <div class="tr"><span class="lab">Starship</span><b id="tS">0.0 km · 0 km/h</b></div>
+  <div class="tr"><span class="lab">Chopsticks</span><b id="tA">closed</b></div>
+</div>
+<div class="hud" id="count"></div>
+<div class="hud" id="banner"></div>
+<div id="menu">
+  <div class="grp">
+    <button class="pri" id="bGo" title="T-10 countdown, liftoff, hot staging, booster catch (L)">Launch</button>
+    <button id="bShip" title="Starship returns and is caught and stacked (C)">Ship catch</button>
+    <button id="bStop" title="Back to the pad, stacked (Esc)">Reset</button>
+  </div>
+  <div class="grp" id="mech">
+    <button id="bArms" title="Open or close the chopsticks (A)">Arms open</button>
+    <button id="bUp" title="Carriage up (R, hold)">Carriage ▲</button>
+    <button id="bDn" title="Carriage down (F, hold)">▼</button>
+    <button id="bQD" title="Swing the QD arm (Q)">QD arm</button>
+    <button id="bFin" title="Super Heavy grid fins: stowed for launch, deployed for the return (G)">Grid fins</button>
+  </div>
+  <div class="grp">
+    <button id="bCam" class="on" title="Camera: director cuts, or orbit with drag and wheel (V)">Director</button>
+    <button id="bTw" title="Twilight (O)">Twilight</button>
+    <button id="bDetail" title="Cruise ships (needs X1_SkyRacer_Ships.bin beside this page)">Ships</button>
+    <button id="bSnd" title="Sound (M)">Sound</button>
+  </div>
+</div>
+<div id="help" hidden></div><div id="lb" hidden></div><div id="share" hidden></div>
+<div id="loading"><img alt="X1 Racing" src="data:image/png;base64,@@X1FLAG@@"><div id="ldMsg">LOADING THE TOWER</div></div>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>
